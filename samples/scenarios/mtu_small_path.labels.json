@@ -1,0 +1,11 @@
+{
+  "scenario": "mtu_small_path",
+  "category": "negative",
+  "title": "Smaller path MTU, handled correctly",
+  "description": "The route to the mail server has a smaller MTU (1400 bytes). The router says so with an ICMP 'fragmentation needed' message, the PCs shrink their packets, and every upload completes. Nothing is broken.",
+  "seed": 1,
+  "packets": 2458,
+  "labels": [],
+  "quality": [],
+  "incidents": []
+}

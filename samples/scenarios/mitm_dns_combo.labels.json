@@ -1,0 +1,38 @@
+{
+  "scenario": "mitm_dns_combo",
+  "category": "attack",
+  "title": "Man-in-the-middle with forged DNS",
+  "description": "One device poisons ARP to sit between a PC and the router, then uses its position to answer that PC's DNS questions for the bank and mail sites with its own address. Two findings, one attacker.",
+  "seed": 1,
+  "packets": 3012,
+  "labels": [
+    {
+      "kind": "arp_spoofing",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.1",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390419.724,
+      "end": 1730390460.0
+    },
+    {
+      "kind": "dns_spoofing",
+      "verdict": "attack",
+      "entities": [
+        "mail.example.org",
+        "www.iiitdm.ac.in",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390429.329,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": [],
+  "incidents": [
+    [
+      "arp_spoofing",
+      "dns_spoofing"
+    ]
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "scenario": "pmtud_blackhole",
+  "category": "fault",
+  "title": "Uploads hang: path MTU black hole",
+  "description": "After a VPN or PPPoE link was added, uploads to the mail server stall: small packets get through, full-size ones vanish, and the router's 'packet too big' message is blocked by a firewall.",
+  "seed": 1,
+  "packets": 2475,
+  "labels": [
+    {
+      "kind": "mtu_blackhole",
+      "verdict": "fault",
+      "entities": [
+        "203.0.113.25"
+      ],
+      "start": 1730390407.791,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": [],
+  "incidents": []
+}

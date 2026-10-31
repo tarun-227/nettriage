@@ -23,5 +23,11 @@
       "end": 1730390460.0
     }
   ],
-  "quality": []
+  "quality": [],
+  "incidents": [
+    [
+      "connectivity_outage",
+      "dns_failure"
+    ]
+  ]
 }

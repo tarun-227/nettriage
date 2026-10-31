@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from lan import BCAST, SITES, TS0, ZERO_MAC, Host, Lan
-from scapy.all import ARP, IP, TCP, Ether
+from scapy.all import ARP, ICMP, IP, TCP, Ether, Raw
 from scapy.layers.vrrp import VRRP
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,10 +54,14 @@ class Result:
         self.lan = lan
         self.labels: list[dict] = []
         self.quality: list[str] = []
+        self.incidents: list[list[str]] = []  # finding kinds that must be linked into one incident
 
     def expect(self, kind: str, verdict: str, entities: list[str], start: float, end: float = DURATION) -> None:
         self.labels.append({"kind": kind, "verdict": verdict, "entities": entities,
                             "start": round(TS0 + start, 3), "end": round(TS0 + end, 3)})
+
+    def connect(self, *kinds: str) -> None:
+        self.incidents.append(list(kinds))
 
 
 def office(seed: int, n_clients: int = 6, dhcp_baseline: bool = True) -> tuple[Lan, random.Random]:
@@ -556,6 +560,155 @@ def uplink_outage(seed: int) -> Result:
     r = Result(lan)
     r.expect("connectivity_outage", "fault", [], t0)
     r.expect("dns_failure", "fault", [lan.resolver.ip], t0)
+    r.connect("connectivity_outage", "dns_failure")
+    return r
+
+
+def upload(lan: Lan, rng: random.Random, t: float, c: Host, server_ip: str, *, icmp_from: str | None,
+           path_mtu: int = 1400, chunks: int = 6, windows_fallback: bool = False) -> float:
+    """A client upload over a path whose MTU is smaller than its own.
+
+    With ``icmp_from`` the bottleneck router reports "fragmentation needed" and the
+    client resends in smaller segments (PMTUD working). Without it the ICMP is
+    filtered: full-size segments vanish and are retransmitted until the client
+    gives up, or, like Windows' black-hole detection, falls back to 536-byte segments.
+    """
+    sport, cseq, sseq = rng.randrange(49152, 65535), rng.getrandbits(32), rng.getrandbits(32)
+    rtt, dport = rng.uniform(0.02, 0.05), 587
+
+    def C(flags, seq, ack, n=0):
+        p = lan.ip(c, server_ip, lan.gw.mac) / TCP(sport=sport, dport=dport, flags=flags, seq=seq & 0xFFFFFFFF,
+                                                   ack=ack & 0xFFFFFFFF, window=64240)
+        return p / Raw(b"\x00" * n) if n else p
+
+    def S(flags, seq, ack, n=0):
+        p = Ether(src=lan.gw.mac, dst=c.mac) / IP(src=server_ip, dst=c.ip, ttl=54, flags="DF") / TCP(
+            sport=dport, dport=sport, flags=flags, seq=seq & 0xFFFFFFFF, ack=ack & 0xFFFFFFFF, window=65160)
+        return p / Raw(b"\x00" * n) if n else p
+
+    tr = lan.trace
+    syn = C("S", cseq, 0)
+    syn[TCP].options = [("MSS", 1460), ("NOP", None), ("WScale", 7), ("SAckOK", b"")]
+    tr.add(t, syn)
+    t += rtt
+    synack = S("SA", sseq, cseq + 1)
+    synack[TCP].options = [("MSS", 1460)]
+    tr.add(t, synack)
+    tr.add(t + 0.0003, C("A", cseq + 1, sseq + 1))
+    s_next, c_next = sseq + 1, cseq + 1
+    # A small greeting each way gets through fine.
+    tr.add(t + 0.002, S("PA", s_next, c_next, 64))
+    s_next += 64
+    tr.add(t + 0.003, C("PA", c_next, s_next, 120))
+    c_next += 120
+    t += rtt + 0.003
+    tr.add(t, S("A", s_next, c_next))
+    big = 1448
+    start = c_next
+    first_big = None
+    for i in range(chunks):
+        pkt = C("PA" if i == chunks - 1 else "A", start + i * big, s_next, big)
+        tr.add(t + 0.001 + i * 0.0004, pkt)
+        if first_big is None:
+            first_big = pkt
+    t += 0.01
+    if icmp_from:
+        router = Ether(src=lan.gw.mac, dst=c.mac) / IP(src=icmp_from, dst=c.ip, ttl=62) / ICMP(
+            type=3, code=4, nexthopmtu=path_mtu) / IP(src=c.ip, dst=server_ip, ttl=63, flags="DF") / TCP(
+            sport=sport, dport=dport, flags="A", seq=start)
+        tr.add(t + 0.004, router)
+        seg = path_mtu - 40
+        t += 0.01
+        total, sent = chunks * big, 0
+        while sent < total:
+            n = min(seg, total - sent)
+            tr.add(t, C("A", start + sent, s_next, n))
+            sent += n
+            t += 0.0005
+            if sent % (2 * seg) == 0 or sent == total:
+                tr.add(t + rtt, S("A", s_next, start + sent))
+        t += rtt + 0.05
+        tr.add(t, C("FA", start + total, s_next))
+        tr.add(t + rtt, S("FA", s_next, start + total + 1))
+        return t + rtt
+    rto = 0.3
+    for _ in range(5):
+        t += rto
+        tr.add(t, C("A", start, s_next, big))  # the same full-size segment, again and again
+        rto *= 2
+    if windows_fallback:
+        sent, total = 0, chunks * big
+        while sent < total:
+            n = min(536, total - sent)
+            t += 0.002
+            tr.add(t, C("A", start + sent, s_next, n))
+            sent += n
+            tr.add(t + rtt, S("A", s_next, start + sent))
+        return t + rtt
+    tr.add(t + 2.0, C("RA", start, s_next))
+    return t + 2.0
+
+
+@scenario("fault", "Uploads hang: path MTU black hole",
+          "After a VPN or PPPoE link was added, uploads to the mail server stall: small packets get through, "
+          "full-size ones vanish, and the router's 'packet too big' message is blocked by a firewall.")
+def pmtud_blackhole(seed: int) -> Result:
+    lan, rng = office(seed)
+    server = SITES["mail.example.org"]
+    lan.background(DURATION)
+    first = None
+    for i, c in enumerate(rng.sample(lan.clients, rng.choice([2, 3, 4]))):
+        t = rng.uniform(5, 30)
+        first = t if first is None else min(first, t)
+        lan.ensure_arp(t, c, lan.gw)
+        upload(lan, rng, t, c, server, icmp_from=None, windows_fallback=i % 2 == 1)
+    r = Result(lan)
+    r.expect("mtu_blackhole", "fault", [server], first or 5)
+    return r
+
+
+@scenario("negative", "Smaller path MTU, handled correctly",
+          "The route to the mail server has a smaller MTU (1400 bytes). The router says so with an ICMP "
+          "'fragmentation needed' message, the PCs shrink their packets, and every upload completes. "
+          "Nothing is broken.")
+def mtu_small_path(seed: int) -> Result:
+    lan, rng = office(seed)
+    server = SITES["mail.example.org"]
+    lan.background(DURATION)
+    for c in rng.sample(lan.clients, rng.choice([2, 3, 4])):
+        t = rng.uniform(5, 40)
+        lan.ensure_arp(t, c, lan.gw)
+        upload(lan, rng, t, c, server, icmp_from="100.64.12.1", path_mtu=rng.choice([1400, 1420, 1452]))
+    return Result(lan)
+
+
+@scenario("attack", "Man-in-the-middle with forged DNS",
+          "One device poisons ARP to sit between a PC and the router, then uses its position to answer that "
+          "PC's DNS questions for the bank and mail sites with its own address. Two findings, one attacker.")
+def mitm_dns_combo(seed: int) -> Result:
+    lan, rng = office(seed)
+    attacker = lan_attacker(lan)
+    victim = lan.clients[2]
+    lan.background(DURATION)
+    start = rng.uniform(12, 20)
+    arp_poison(lan, attacker, victim, start, both_ways=True)
+    targets = ["mail.example.org", "www.iiitdm.ac.in"]
+    first = None
+    for k in range(rng.choice([3, 4, 5])):
+        t = rng.uniform(start + 3, DURATION - 4)
+        first = t if first is None else min(first, t)
+        name = targets[k % 2]
+        txid, sport = rng.randrange(65536), rng.randrange(49152, 65535)
+        lan.trace.add(t, lan.dns_query_pkt(victim, lan.gw.ip, lan.gw.mac, name, txid, sport))
+        lan.trace.add(t + rng.uniform(0.0004, 0.0012), lan.dns_response_pkt(
+            lan.gw.ip, attacker.mac, victim, name, txid, sport, [attacker.ip], ttl=3600, ip_ttl=64))
+        lan.trace.add(t + rng.uniform(0.012, 0.03), lan.dns_response_pkt(
+            lan.gw.ip, lan.gw.mac, victim, name, txid, sport, [SITES[name]], ttl=300, ip_ttl=64))
+    relay_through(lan, victim, attacker, start, both_ways=True)
+    r = Result(lan)
+    r.expect("arp_spoofing", "attack", [lan.gw.ip, attacker.mac], start)
+    r.expect("dns_spoofing", "attack", targets + [attacker.mac], first or start)
+    r.connect("arp_spoofing", "dns_spoofing")
     return r
 
 
@@ -821,7 +974,8 @@ def generate(names: list[str], seeds: list[int], out: Path, suffix_seed: bool) -
             stem = f"{name}__s{seed}" if suffix_seed else name
             n = result.lan.trace.write(out / f"{stem}.pcap")
             meta = {"scenario": name, "category": sc.category, "title": sc.title, "description": sc.description,
-                    "seed": seed, "packets": n, "labels": result.labels, "quality": result.quality}
+                    "seed": seed, "packets": n, "labels": result.labels, "quality": result.quality,
+                    "incidents": result.incidents}
             (out / f"{stem}.labels.json").write_text(json.dumps(meta, indent=2) + "\n")
             print(f"  {stem:40s} {n:>7,} packets  {len(result.labels)} label(s)")
 
