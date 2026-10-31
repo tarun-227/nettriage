@@ -14,6 +14,8 @@ from .decode.layers import linktype_name
 from .decode.model import Packet
 from .detectors.arp import ArpDetector
 from .detectors.base import Context, Detector, is_multicast_mac, is_public_unicast
+from .detectors.dhcp import DhcpDetector
+from .detectors.dns import DnsDetector
 from .detectors.portscan import PortScanDetector
 from .detectors.tcp import TcpHealthDetector
 from .evidence.pcapwriter import pcap_bytes
@@ -33,7 +35,7 @@ from .security.sanitize import display_safe
 
 # Order matters at finalize time: the scan detector marks scanners so the TCP
 # health detector can leave their failed connections out.
-DETECTORS: list[type[Detector]] = [ArpDetector, PortScanDetector, TcpHealthDetector]
+DETECTORS: list[type[Detector]] = [ArpDetector, PortScanDetector, TcpHealthDetector, DnsDetector, DhcpDetector]
 
 ProgressFn = Callable[[dict], None]
 _BUCKET_SIZES = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 21600, 43200, 86400]

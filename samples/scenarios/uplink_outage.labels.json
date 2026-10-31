@@ -1,0 +1,27 @@
+{
+  "scenario": "uplink_outage",
+  "category": "fault",
+  "title": "Internet connection down",
+  "description": "Partway through, the office's internet line drops. The router's DNS starts failing and every PC's connections to sites it already knew go unanswered. Many failed connections from every PC: an outage, not a port scan.",
+  "seed": 1,
+  "packets": 1204,
+  "labels": [
+    {
+      "kind": "connectivity_outage",
+      "verdict": "fault",
+      "entities": [],
+      "start": 1730390428.018,
+      "end": 1730390460.0
+    },
+    {
+      "kind": "dns_failure",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.1"
+      ],
+      "start": 1730390428.018,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

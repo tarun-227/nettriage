@@ -221,6 +221,41 @@ UNANSWERED_TEXT = {
         technical="{count} unanswered SYN(s).", cause="A transient failure.", fix=("Nothing to fix.",)),
 }
 
+OUTAGE = Differential(
+    [
+        HypothesisDef("uplink", "Internet connection down", Verdict.FAULT, prior=0.0),
+        HypothesisDef("capture", "Replies missing from the capture", Verdict.BENIGN, prior=-1.0),
+    ],
+    [
+        Rule("many_servers", "uplink", 2.0, "{count} different internet servers stopped answering at the same time"),
+        Rule("many_clients", "uplink", 1.5, "{count} different devices were affected"),
+        Rule("worked_before", "uplink", 1.5, "Internet connections worked until {onset}"),
+        Rule("silent_capture", "capture", 5.0, "Nothing at all was captured coming back through the gateway"),
+        Rule("silent_capture", "uplink", -3.0, "The replies may exist but were not captured"),
+    ],
+)
+
+OUTAGE_TEXT = {
+    "uplink": Narrative(
+        kind="connectivity_outage",
+        title="The internet connection appears to be down",
+        simple=("From {onset}, {clients} devices could not reach {count} different internet servers that were "
+                "working before. Nothing came back at all, which points to the router or the internet line, not "
+                "to the individual websites."),
+        technical=("{attempts} unanswered connection attempts ({retx} retransmissions) to {count} public servers "
+                   "from {clients} clients after {onset}; {ok_before} connections succeeded before."),
+        cause="The internet line, the modem or the router's WAN side is down, or a firewall started dropping traffic.",
+        fix=("Check the router's and modem's internet/WAN lights, then restart the modem and router.",
+             "Plug a laptop straight into the modem to see whether the line itself works.",
+             "If it is the line, contact your internet provider with the time it started ({onset})."),
+    ),
+    "capture": Narrative(
+        kind="capture_one_directional", title="Replies from the internet are missing from the capture",
+        simple="Connections to many internet servers look unanswered, but nothing at all was captured coming "
+               "back through the gateway, so the capture is probably one-directional.",
+        technical="{attempts} unanswered attempts.", cause="Capture setup.", fix=("Capture both directions.",)),
+}
+
 LATENCY = Differential(
     [
         HypothesisDef("slow", "Unusually slow path or server", Verdict.FAULT, prior=-0.5),
@@ -600,11 +635,48 @@ class TcpHealthDetector(Detector):
             ))
         return out
 
+    def _outage(self, ctx: Context, public: dict[str, list]) -> Finding | None:
+        """Many internet servers failing at once is one problem (the uplink), not many."""
+        clients = {a[0] for attempts in public.values() for a in attempts}
+        if len(public) < 3 or len(clients) < 2:
+            return None
+        onset = min(a[1] for attempts in public.values() for a in attempts)
+        ok_before = sum(1 for (s, _), t in self.ok_service.items() if not is_private(s) and t < onset)
+        attempts = [a for lst in public.values() for a in lst]
+        retx = sum(a[3] for a in attempts)
+        obs = [Observation("many_servers", [f for a in attempts for f in a[2]][:100], {"count": len(public)},
+                           strength=min(1.0, len(public) / 5)),
+               Observation("many_clients", [], {"count": len(clients)})]
+        if ok_before >= 3:
+            obs.append(Observation("worked_before", [], {"onset": fmt_time(onset)}))
+        if ctx.gateway_silent():
+            obs.append(Observation("silent_capture"))
+        diagnosis = OUTAGE.diagnose(obs, sufficient=len(attempts) >= 5)
+        return build_finding(
+            analyzer=self.name, diagnosis=diagnosis, narratives=OUTAGE_TEXT,
+            ctx={"onset": fmt_time(onset), "clients": len(clients), "count": len(public), "attempts": len(attempts),
+                 "retx": retx, "ok_before": ok_before},
+            entities=[Entity(kind="ip", value=s, role="unreachable server") for s in sorted(public)[:6]]
+            + [Entity(kind="ip", value=c, role="affected client") for c in sorted(clients)[:6]],
+            frames=[f for a in attempts for f in a[2]], key_packets=[],
+            time_start=onset, time_end=max(a[1] for a in attempts),
+            wireshark_filter="tcp.flags.syn == 1 && tcp.flags.ack == 0 && tcp.analysis.retransmission",
+            impact="critical_asset", max_frames=self.limits.max_evidence_frames,
+        )
+
     def _unanswered(self, ctx: Context, scanners: set[str]) -> list[Finding]:
         out = []
         silent = ctx.silent_ips()
         answered_servers = {s for (s, _), _ in self.ok_service.items()}
+        public = {s: [a for a in lst if a[0] not in scanners] for s, lst in self.unanswered.items()
+                  if not is_private(s)}
+        public = {s: lst for s, lst in public.items() if lst}
+        outage = self._outage(ctx, public)
+        if outage is not None:
+            out.append(outage)
         for server, attempts in self.unanswered.items():
+            if outage is not None and server in public:
+                continue
             attempts = [a for a in attempts if a[0] not in scanners]
             if not attempts:
                 continue
@@ -623,7 +695,8 @@ class TcpHealthDetector(Detector):
                 obs.append(Observation("others_fine"))
             if server in silent or not is_private(server) and ctx.gateway_silent():
                 obs.append(Observation("silent_capture"))
-            diagnosis = UNANSWERED.diagnose(obs, sufficient=len(attempts) + retx >= 3)
+            # One connection that failed, even with retries, is worth showing but not alarming about.
+            diagnosis = UNANSWERED.diagnose(obs, sufficient=len(attempts) >= 2 and len(attempts) + retx >= 3)
             ts = [a[1] for a in attempts]
             ports = ", ".join(str(p) for p in sorted({a[4] for a in attempts})[:4])
             out.append(build_finding(

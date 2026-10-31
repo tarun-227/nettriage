@@ -17,10 +17,6 @@ sys.path.insert(0, str(ROOT / "eval"))
 
 run_eval = pytest.importorskip("run_eval")
 
-BUILT = {"arp_spoofing", "duplicate_ip", "host_unreachable", "port_scan", "tcp_retransmissions",
-         "connection_refused", "high_latency"}
-
-
 @pytest.fixture(scope="module")
 def results():
     if not any(SCENARIOS.glob("*.labels.json")):
@@ -33,9 +29,13 @@ def test_no_false_alarms(results):
     assert sum(t.fp for t in results.per_kind.values()) == 0, results.false_alarms
 
 
-def test_built_detectors_find_every_labelled_problem(results):
-    missed = {k: t.fn for k, t in results.per_kind.items() if k in BUILT and t.fn}
-    assert not missed, results.misses
+def test_every_labelled_problem_is_found(results):
+    assert not results.misses, results.misses
+
+
+def test_nothing_left_for_review(results):
+    # Every curated scenario has enough evidence for a firm verdict.
+    assert results.needs_review == 0
 
 
 def test_verdicts_are_never_swapped(results):

@@ -70,7 +70,9 @@ def _stealth_name(flags: int) -> str | None:
 DIFF = Differential(
     [
         HypothesisDef("scan", "Port scan", Verdict.ATTACK, prior=-1.0),
-        HypothesisDef("outage", "Connectivity outage", Verdict.FAULT, prior=-1.0),
+        # An outage is a fault, but the TCP health detector reports it once for the whole
+        # network; here it only explains why this source is not a scanner.
+        HypothesisDef("outage", "Connectivity outage", Verdict.BENIGN, prior=-1.0),
         HypothesisDef("noisy", "Misbehaving application", Verdict.BENIGN, prior=0.0),
         HypothesisDef("capture", "Replies missing from the capture", Verdict.BENIGN, prior=-1.0),
     ],
@@ -123,14 +125,14 @@ TEXT = {
              "{open_fix}"),
     ),
     "outage": Narrative(
-        kind="connectivity_outage",
-        title="{src} cannot reach the services it needs",
-        simple=("{src} tried {attempts} destinations and most never answered, but they were ordinary sites it "
-                "had looked up first. That is a broken connection, not an attack."),
+        kind="scan_ruled_out_outage",
+        title="Not a port scan: {src}'s failed connections are an outage symptom",
+        simple=("{src} had many failed connections, which can look like scanning, but they went to ordinary sites "
+                "it had looked up, on everyday ports, while other devices failed the same way. That is a broken "
+                "connection, not an attack."),
         technical="{fails} failed and {oks} successful first contacts; targets resolved via DNS; ports {ports}.",
-        cause="The router, the internet line or a firewall is blocking or dropping the traffic.",
-        fix=("Check the router and the internet connection.",
-             "Check whether a firewall or proxy setting on {src} blocks outbound connections."),
+        cause="Connectivity problem (see the related network finding).",
+        fix=("See the connectivity finding for this capture.",),
     ),
     "capture": Narrative(
         kind="capture_one_directional",

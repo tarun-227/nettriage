@@ -47,6 +47,14 @@ Our adaptations:
   or refused service never accumulates evidence. That case stays a fault.
 - **Friendly hosts.** We ignore failures towards hosts that had contacted the source first. The paper suggests
   this to remove its IDENT false positives.
+- **A floor instead of a final "benign" verdict.** The paper stops tracking a host once it is judged benign.
+  We hold the likelihood ratio at the benign threshold instead, in the style of CUSUM. So a PC that browsed
+  normally for an hour and then starts scanning is still caught, after about seven failed first contacts
+  rather than four.
+- **Outage versus scan.** TRW alone cannot tell a scanner from a PC whose internet connection just died: both
+  fail first contact after first contact. We weigh the TRW result against an outage explanation. The outage
+  wins when the failed targets came from DNS lookups, sit on everyday ports, and other devices fail at the same
+  time. The outage is then reported once, as a network fault, and the PCs are listed as "not a scan".
 - **Shown to the user.** The likelihood ratio and the count of failed first contacts appear in the reasoning,
   e.g. "11 of 12 new destinations refused or ignored the connection; odds 4,096 to 1 against normal use".
 - **Stealth scans.** FIN/NULL/Xmas flag combinations never occur in legitimate TCP, so they are direct evidence,

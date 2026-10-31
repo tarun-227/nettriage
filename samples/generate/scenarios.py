@@ -530,6 +530,35 @@ def dns_slow(seed: int) -> Result:
     return r
 
 
+@scenario("fault", "Internet connection down",
+          "Partway through, the office's internet line drops. The router's DNS starts failing and every PC's "
+          "connections to sites it already knew go unanswered. Many failed connections from every PC: an outage, "
+          "not a port scan.")
+def uplink_outage(seed: int) -> Result:
+    lan, rng = office(seed)
+    t0 = rng.uniform(20, 30)
+    cache: dict[tuple[str, str], str] = {}
+
+    def resolve(t, c, name):
+        if t < t0:
+            cache[(c.ip, name)] = SITES[name]
+            return lan.dns_lookup(t, c, name, answers=[SITES[name]]), SITES[name]
+        ip = cache.get((c.ip, name))
+        if ip:  # cached name: the PC tries to connect straight away and gets nothing back
+            sport, seq = rng.randrange(49152, 65535), rng.getrandbits(32)
+            for delay in (0.0, 1.0, 3.0):
+                lan.trace.add(t + delay, lan.ip(c, ip, lan.gw.mac) / TCP(sport=sport, dport=443, flags="S", seq=seq,
+                                                                        options=[("MSS", 1460)]))
+            return t + 7, None
+        return lan.dns_lookup(t, c, name, rcode=2, rtt=rng.uniform(0.5, 2.0)), None
+
+    lan.background(DURATION, resolve=resolve)
+    r = Result(lan)
+    r.expect("connectivity_outage", "fault", [], t0)
+    r.expect("dns_failure", "fault", [lan.resolver.ip], t0)
+    return r
+
+
 @scenario("fault", "DHCP server down",
           "New laptops ask for an address again and again and nobody offers one, so they never get online.")
 def dhcp_no_offer(seed: int) -> Result:

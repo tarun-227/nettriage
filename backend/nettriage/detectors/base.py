@@ -12,6 +12,12 @@ from ..decode.model import Packet
 from ..ingest.capture import IngestCounters
 from ..schema import Finding, QualityWarning
 
+# "Local" in the sense a small office means it: addresses that never leave the site.
+# (Python's is_private also covers the documentation ranges, which we treat as internet.)
+_LOCAL_NETS = [ipaddress.ip_network(n) for n in (
+    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "127.0.0.0/8", "100.64.0.0/10",
+    "fc00::/7", "fe80::/10", "::1/128")]
+
 
 @lru_cache(maxsize=65536)
 def is_private(ip: str) -> bool:
@@ -19,7 +25,7 @@ def is_private(ip: str) -> bool:
         a = ipaddress.ip_address(ip)
     except ValueError:
         return False
-    return a.is_private or a.is_link_local
+    return any(a in n for n in _LOCAL_NETS if n.version == a.version)
 
 
 @lru_cache(maxsize=65536)
@@ -28,7 +34,8 @@ def is_public_unicast(ip: str) -> bool:
         a = ipaddress.ip_address(ip)
     except ValueError:
         return False
-    return a.is_global and not a.is_multicast
+    return not (is_private(ip) or a.is_multicast or a.is_unspecified or a.is_reserved
+                or ip == "255.255.255.255")
 
 
 def is_multicast_mac(mac: str | None) -> bool:
