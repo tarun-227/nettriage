@@ -127,6 +127,18 @@ class TimelineBucket(BaseModel):
     bytes: int
 
 
+class NameCount(BaseModel):
+    name: str
+    count: int
+
+
+class DeviceName(BaseModel):
+    mac: str
+    hostname: str | None = None
+    vendor_class: str | None = None
+    ip: str | None = None
+
+
 class Report(BaseModel):
     schema_version: str = SCHEMA_VERSION
     capture: CaptureInfo
@@ -139,4 +151,7 @@ class Report(BaseModel):
     devices: int = 0
     protocols: dict[str, int] = Field(default_factory=dict)
     timeline: list[TimelineBucket] = Field(default_factory=list)
+    # Inventory: what was looked up and what devices called themselves (packet text, escaped).
+    names: list[NameCount] = Field(default_factory=list)
+    device_names: list[DeviceName] = Field(default_factory=list)
     analysis_seconds: float = 0.0

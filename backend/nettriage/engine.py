@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .config import Limits
 from .decode.layers import linktype_name
-from .decode.model import Packet
+from .decode.model import UNSPECIFIED, Packet
 from .detectors.arp import ArpDetector
 from .detectors.base import Context, Detector, is_multicast_mac, is_public_unicast
 from .detectors.dhcp import DhcpDetector
@@ -23,9 +23,11 @@ from .ingest.capture import IngestCounters, RawPacket, read_capture
 from .ingest.stream import stream_packets
 from .schema import (
     CaptureInfo,
+    DeviceName,
     Finding,
     IngestStats,
     IntegrityCheck,
+    NameCount,
     Report,
     SkipExample,
     TimelineBucket,
@@ -126,6 +128,8 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
     per_second: dict[int, list[int]] = {}
     ips: set[str] = set()
     devices: set[str] = set()
+    names: Counter = Counter()
+    device_names: dict[str, DeviceName] = {}
     first = last = None
     n = 0
 
@@ -155,8 +159,17 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
                     devices.add(link.src)
             if link and link.dst and not is_multicast_mac(link.dst):
                 ctx.rx_by_mac[link.dst] += 1
-            if p.dns and p.dns.qr and len(ctx.dns_answers) < limits.max_dns_transactions:
-                ctx.dns_answers.update(a.data for a in p.dns.answers if a.rtype in (1, 28))
+            if p.dns:
+                if p.dns.qr and len(ctx.dns_answers) < limits.max_dns_transactions:
+                    ctx.dns_answers.update(a.data for a in p.dns.answers if a.rtype in (1, 28))
+                elif not p.dns.qr and not p.dns.multicast and p.dns.qname:
+                    if p.dns.qname in names or len(names) < 5000:
+                        names[p.dns.qname] += 1
+            if p.dhcp and p.dhcp.chaddr and (p.dhcp.hostname or p.dhcp.vendor_class) and p.dhcp.op == 1:
+                if p.dhcp.chaddr in device_names or len(device_names) < 500:
+                    device_names[p.dhcp.chaddr] = DeviceName(
+                        mac=p.dhcp.chaddr, hostname=p.dhcp.hostname, vendor_class=p.dhcp.vendor_class,
+                        ip=p.dhcp.requested_ip or (p.dhcp.ciaddr if p.dhcp.ciaddr != UNSPECIFIED else None))
             if p.ip:
                 if len(ips) < limits.max_hosts:
                     ips.add(p.ip.src)
@@ -230,6 +243,8 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
         devices=len(devices),
         protocols=dict(protocols.most_common()),
         timeline=_timeline(per_second, first or 0.0, duration),
+        names=[NameCount(name=n, count=c) for n, c in names.most_common(25)],
+        device_names=list(device_names.values())[:50],
         analysis_seconds=round(time.perf_counter() - started, 3),
     )
     report = Report.model_validate(_sanitize(report.model_dump()))

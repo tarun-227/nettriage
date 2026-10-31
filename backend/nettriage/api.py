@@ -21,6 +21,24 @@ FINDING_ID = r"^[a-z_]+-[0-9a-f]{10}$"
 SAMPLE_NAME = r"^[a-z0-9_.]{1,80}$"
 
 
+HOSTILE_SAMPLES = {
+    "not_a_pcap.exe.pcap": ("Disguised executable", "A Windows program renamed to .pcap. It should be refused from "
+                            "its first bytes, before anything is parsed."),
+    "empty.pcap": ("Empty file", "Zero bytes. It should be refused, not crash."),
+    "truncated.pcap": ("Capture cut off mid-packet", "The complete packets are kept and the cut is reported."),
+    "huge_caplen.pcap": ("Packet claiming 4 GB", "A length field built to exhaust memory. It is refused without "
+                         "allocating anything."),
+    "bad_block_len.pcapng": ("Impossible pcapng block", "A block length of 13 bytes, which can't be valid. Reading "
+                             "stops safely at that block."),
+    "corrupt_packets.pcap": ("Corrupt packets", "Broken IP, TCP and DHCP headers, a runt frame and noise. Each is "
+                             "skipped with a reason; the good packets are still analysed."),
+    "dns_pointer_loop.pcap": ("DNS pointer loops", "DNS names that point at themselves, an infinite-loop trick. "
+                              "Caught at once and skipped."),
+    "xss_payloads.pcap": ("Script injection in packet data", "DNS names and DHCP hostnames containing <script>, "
+                          "terminal escape codes and a right-to-left override. They are shown as harmless text."),
+}
+
+
 def samples_dir() -> Path:
     env = os.environ.get("NETTRIAGE_SAMPLES_DIR")
     return Path(env) if env else Path(__file__).resolve().parents[2] / "samples"
@@ -41,8 +59,9 @@ def list_samples() -> dict[str, dict]:
                               "description": meta.get("description", ""), "category": meta.get("category", ""),
                               "size": pcap.stat().st_size, "path": pcap}
     for pcap in sorted((base / "malicious").glob("*.pcap*")):
-        out[pcap.name] = {"name": pcap.name, "title": pcap.name, "description": "Hostile or broken file, to show "
-                          "safe handling.", "category": "malicious", "size": pcap.stat().st_size, "path": pcap}
+        title, description = HOSTILE_SAMPLES.get(pcap.name, (pcap.name, "Hostile or broken file."))
+        out[pcap.name] = {"name": pcap.name, "title": title, "description": description, "category": "malicious",
+                          "size": pcap.stat().st_size, "path": pcap}
     return out
 
 

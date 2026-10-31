@@ -91,9 +91,24 @@ def test_full_round_trip_and_upload_is_deleted(client):
 
 
 def test_malformed_ids_are_rejected(client):
-    assert client.get("/api/analyses/../../etc/passwd").status_code in (400, 404)
     assert client.get("/api/analyses/not-an-id").status_code == 400
     assert client.get("/api/analyses/" + "0" * 32).status_code == 404
+    assert client.get("/api/analyses/" + "0" * 32 + "/evidence/../../x").status_code in (400, 404)
+
+
+@pytest.mark.parametrize("path", [
+    "/api/analyses/../../etc/passwd",
+    "/assets/../../nettriage/config.py",
+    "/%2e%2e/%2e%2e/nettriage/config.py",
+    "/..%2f..%2fnettriage%2fconfig.py",
+    "/static/../config.py",
+])
+def test_path_traversal_never_serves_other_files(client, path):
+    r = client.get(path)
+    assert r.status_code in (200, 400, 404)
+    assert "load_limits" not in r.text and "root:" not in r.text
+    if r.status_code == 200:
+        assert '<div id="root">' in r.text  # the app shell, nothing else
 
 
 def test_samples_listing_and_hostile_sample(client):

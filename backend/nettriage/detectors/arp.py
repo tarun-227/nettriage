@@ -563,8 +563,10 @@ class ArpDetector(Detector):
         entities += [Entity(kind="mac", value=other, role="claimant"),
                      Entity(kind="mac", value=owner, role="original owner")]
         entities += [Entity(kind="ip", value=v, role="victim") for v in victims[:5] if v not in disputed]
-        kps = [k for d in disputed for m in (other, owner) for k in self.kp.get((d, m), [])]
+        # Lead with the claimant's packets and the relayed traffic; a few of the owner's for contrast.
+        kps = [k for d in disputed for k in self.kp.get((d, other), [])][:12]
         kps += self.kp.get(("relay", other), [])
+        kps += [k for d in disputed for k in self.kp.get((d, owner), [])][:3]
         return build_finding(
             analyzer=self.name, diagnosis=diagnosis, narratives=CONFLICT_TEXT, ctx=ctx_text, entities=entities,
             frames=frames, key_packets=kps, time_start=min(times), time_end=max(times),

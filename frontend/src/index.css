@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens as RGB triplets so Tailwind can apply opacity (bg-attack/10 etc.). */
+:root,
+:root[data-theme="dark"] {
+  --bg: 8 11 18;
+  --surface: 15 20 31;
+  --raised: 22 29 44;
+  --line: 36 46 66;
+  --ink: 226 232 240;
+  --muted: 140 153 175;
+  --accent: 34 211 238;
+  --attack: 248 113 113;
+  --fault: 251 191 36;
+  --review: 96 165 250;
+  --benign: 52 211 153;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: 244 246 250;
+  --surface: 255 255 255;
+  --raised: 240 243 248;
+  --line: 219 225 234;
+  --ink: 15 23 42;
+  --muted: 92 105 128;
+  --accent: 8 145 178;
+  --attack: 220 38 38;
+  --fault: 196 112 0;
+  --review: 37 99 235;
+  --benign: 4 140 98;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg font-sans text-ink antialiased;
+  font-size: 14px;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.3);
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg border border-line bg-raised px-3 py-1.5 text-[13px] font-medium
+      text-ink transition-colors hover:border-accent/60 hover:text-accent focus:outline-none focus-visible:ring-2
+      focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-accent/50 bg-accent/15 text-accent hover:bg-accent/25;
+  }
+  .btn-danger {
+    @apply hover:border-attack/60 hover:text-attack;
+  }
+  .label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-muted;
+  }
+  .mono {
+    @apply font-mono text-[12.5px];
+  }
+  .link {
+    @apply text-accent underline-offset-2 hover:underline;
+  }
+}
+
+/* Thin, theme-aware scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--line)) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

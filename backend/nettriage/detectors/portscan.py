@@ -262,6 +262,7 @@ class PortScanDetector(Detector):
         fails = oks = unanswered = 0
         detect = None
         failed_targets = []
+        failed_ts: list[float] = []
         history = sorted(per.items(), key=lambda kv: kv[1].ts)
         friendly = self.contacted_by.get(src, set())
         for i, ((dst, port), a) in enumerate(history):
@@ -281,6 +282,7 @@ class PortScanDetector(Detector):
             if failed:
                 fails += 1
                 failed_targets.append((dst, port))
+                failed_ts.append(a.ts)
                 lam *= STEP_FAIL
             else:
                 oks += 1
@@ -292,7 +294,8 @@ class PortScanDetector(Detector):
         stealth = sum(self.stealth.get(src, {}).values())
         if detect is None and stealth < 5:
             return None
-        times = [a.ts for _, a in history]
+        # The activity window is the failing part, not the host's earlier normal traffic.
+        times = failed_ts or [a.ts for _, a in history]
         return {"lam": peak, "fails": fails, "oks": oks, "unanswered": unanswered, "detect": detect,
                 "history": history, "failed_targets": failed_targets, "first": times[0], "last": times[-1],
                 "stealth": stealth}

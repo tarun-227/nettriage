@@ -27,3 +27,6 @@ samples/generated/
 !samples/lab/*.pcap
 !samples/lab/*.pcapng
 !samples/malicious/*
+
+# Local tool configuration
+.claude/
