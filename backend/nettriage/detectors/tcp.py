@@ -486,7 +486,8 @@ class TcpHealthDetector(Detector):
         return out
 
     def _loss(self, ctx: Context) -> list[Finding]:
-        pairs = {k: v for k, v in self.pairs.items() if v.data}
+        # Resends on paths with an MTU problem are that problem's symptom, reported by the MTU detector.
+        pairs = {k: v for k, v in self.pairs.items() if v.data and k not in ctx.mtu_pairs}
         total_data = sum(v.data for v in pairs.values())
         total_loss = sum(v.loss for v in pairs.values())
         total_flows = sum(v.flows for v in pairs.values())

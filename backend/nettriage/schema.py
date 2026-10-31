@@ -127,6 +127,18 @@ class TimelineBucket(BaseModel):
     bytes: int
 
 
+class Incident(BaseModel):
+    """Findings linked because they share a root cause, e.g. one attacker device behind two attacks."""
+
+    id: str
+    title: str
+    summary: str
+    verdict: Verdict
+    root_finding: str
+    finding_ids: list[str]
+    entities: list[Entity] = Field(default_factory=list)
+
+
 class NameCount(BaseModel):
     name: str
     count: int
@@ -147,6 +159,7 @@ class Report(BaseModel):
     quality: list[QualityWarning] = Field(default_factory=list)
     findings: list[Finding] = Field(default_factory=list)
     ruled_out: list[Finding] = Field(default_factory=list)
+    incidents: list[Incident] = Field(default_factory=list)
     hosts: int = 0
     devices: int = 0
     protocols: dict[str, int] = Field(default_factory=dict)

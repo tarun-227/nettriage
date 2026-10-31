@@ -675,10 +675,11 @@ def mtu_small_path(seed: int) -> Result:
     lan, rng = office(seed)
     server = SITES["mail.example.org"]
     lan.background(DURATION)
+    path_mtu = rng.choice([1400, 1420, 1452])  # one path, one MTU
     for c in rng.sample(lan.clients, rng.choice([2, 3, 4])):
         t = rng.uniform(5, 40)
         lan.ensure_arp(t, c, lan.gw)
-        upload(lan, rng, t, c, server, icmp_from="100.64.12.1", path_mtu=rng.choice([1400, 1420, 1452]))
+        upload(lan, rng, t, c, server, icmp_from="100.64.12.1", path_mtu=path_mtu)
     return Result(lan)
 
 

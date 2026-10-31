@@ -16,11 +16,13 @@ from .detectors.arp import ArpDetector
 from .detectors.base import Context, Detector, is_multicast_mac, is_public_unicast
 from .detectors.dhcp import DhcpDetector
 from .detectors.dns import DnsDetector
+from .detectors.mtu import MtuDetector
 from .detectors.portscan import PortScanDetector
 from .detectors.tcp import TcpHealthDetector
 from .evidence.pcapwriter import pcap_bytes
 from .ingest.capture import IngestCounters, RawPacket, read_capture
 from .ingest.stream import stream_packets
+from .reasoning.correlate import correlate
 from .schema import (
     CaptureInfo,
     DeviceName,
@@ -35,9 +37,11 @@ from .schema import (
 )
 from .security.sanitize import display_safe
 
-# Order matters at finalize time: the scan detector marks scanners so the TCP
-# health detector can leave their failed connections out.
-DETECTORS: list[type[Detector]] = [ArpDetector, PortScanDetector, TcpHealthDetector, DnsDetector, DhcpDetector]
+# Order matters at finalize time: the scan detector marks scanners and the MTU
+# detector marks paths with MTU problems, so the TCP health detector can leave
+# their failed connections and resends out.
+DETECTORS: list[type[Detector]] = [ArpDetector, PortScanDetector, MtuDetector, TcpHealthDetector, DnsDetector,
+                                   DhcpDetector]
 
 ProgressFn = Callable[[dict], None]
 _BUCKET_SIZES = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 21600, 43200, 86400]
@@ -205,6 +209,7 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
     findings.sort(key=lambda f: (order[f.verdict], sev[f.severity], -f.confidence, f.time_start))
     alerts = [f for f in findings if f.verdict != Verdict.BENIGN]
     ruled_out = [f for f in findings if f.verdict == Verdict.BENIGN]
+    incidents = correlate(alerts)
 
     evidence = _collect_evidence(path, limits, alerts + ruled_out)
     for f in alerts + ruled_out:
@@ -239,6 +244,7 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
         quality=ctx.quality,
         findings=alerts,
         ruled_out=ruled_out,
+        incidents=incidents,
         hosts=len(ips),
         devices=len(devices),
         protocols=dict(protocols.most_common()),

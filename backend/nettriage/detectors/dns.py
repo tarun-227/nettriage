@@ -441,23 +441,43 @@ class DnsDetector(Detector):
         )]
 
     def _integrity(self, server: str, ts: list[Txn], base: dict) -> list[Finding]:
-        """Group replies that break the resolver's profile by the MAC that delivered them."""
-        groups: dict[str, list[tuple[Txn, Reply, bool]]] = defaultdict(list)
+        """Sort replies that break the resolver's profile into forged and merely relayed ones.
+
+        A man-in-the-middle relays genuine answers through its own MAC (with the TTL one
+        lower) as well as forging some. Only the forged ones are spoofing evidence; the
+        relayed ones are reported separately as a harmless path change.
+        """
+        groups: dict[tuple[str, str], list[tuple[Txn, Reply, bool]]] = defaultdict(list)
         sinkholes: list[tuple[Txn, Reply]] = []
+        genuine = base["answers"]
         for t in ts:
-            conflict = len({r.answers for r in t.replies if r.rcode == 0}) > 1
+            answered = [r for r in t.replies if r.rcode == 0]
+            conflict = len({r.answers for r in answered}) > 1
+            known = genuine.get(t.name, set())
+            first_answer = min(answered, key=lambda r: r.ts) if answered else None
             for r in t.replies:
                 if r.answers and set(r.answers) <= SINKHOLES:
                     sinkholes.append((t, r))
                     continue
                 odd_mac = base["mac_share"] >= 0.8 and r.mac != base["mac"]
                 odd_ttl = abs(r.ttl - base["ttl"]) > 1
-                rtt = r.ts - t.ts
-                too_fast = base["rtt"] >= 0.002 and rtt < 0.5 * base["rtt"]
-                if odd_mac or odd_ttl or (conflict and too_fast):
-                    groups[r.mac or f"ttl {r.ttl}"].append((t, r, conflict))
+                too_fast = base["rtt"] >= 0.002 and (r.ts - t.ts) < 0.5 * base["rtt"]
+                matches = bool(r.answers) and set(r.answers) <= known
+                if conflict:
+                    # The genuine answer is the one the resolver gives everyone; failing that,
+                    # the forger is the one that raced in first.
+                    forged = not matches if known else r is first_answer
+                else:
+                    # Timing alone only decides between competing replies (Hold-On); a lone quick
+                    # reply is normal. A lone reply is forged only if it breaks the profile and
+                    # also gives an answer the resolver doesn't give anyone else.
+                    forged = not matches and (odd_ttl or (odd_mac and too_fast))
+                if forged:
+                    groups[("forged", r.mac or f"ttl {r.ttl}")].append((t, r, conflict))
+                elif odd_mac or odd_ttl:
+                    groups[("relayed", r.mac or f"ttl {r.ttl}")].append((t, r, False))
         out = []
-        for mac, items in groups.items():
+        for (_kind, mac), items in groups.items():
             out.append(self._spoof_finding(server, base, mac, items))
         if len(sinkholes) >= 3:
             names = sorted({t.name for t, _ in sinkholes})

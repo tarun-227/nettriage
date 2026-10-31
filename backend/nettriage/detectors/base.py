@@ -62,6 +62,8 @@ class Context:
     dns_answers: set[str] = field(default_factory=set)
     # Sources the port-scan detector flagged; other detectors leave their traffic out.
     scanners: set[str] = field(default_factory=set)
+    # (host, host) pairs whose retransmissions the MTU detector explains; TCP health leaves them out.
+    mtu_pairs: set[tuple[str, str]] = field(default_factory=set)
 
     def gateway_silent(self) -> bool:
         """True if the busiest destination MAC (normally the gateway) never transmits in the capture."""
