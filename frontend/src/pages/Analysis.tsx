@@ -129,7 +129,7 @@ function Progress({ job }: { job: Job }) {
         <h1 className="mt-1 truncate text-[18px] font-semibold">{job.file_name}</h1>
         <p className="text-muted">{bytes(job.size)}</p>
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-line">
-          <div className="h-full rounded-full bg-accent transition-all duration-300"
+          <div className="h-full rounded-full bg-gold transition-all duration-300"
             style={{ width: `${Math.round((explaining ? 1 : Math.max(0.04, fraction)) * 100)}%` }} />
         </div>
         <ol className="mt-5 space-y-2.5">

@@ -6,9 +6,9 @@ const KEY = "nettriage.theme";
 function stored(): Theme {
   try {
     const v = window.localStorage.getItem(KEY);
-    return v === "light" ? "light" : "dark";
+    return v === "dark" ? "dark" : "light";
   } catch {
-    return "dark"; // storage blocked (private window, strict settings): dark is the default anyway
+    return "light"; // storage blocked (private window, strict settings): light is the default anyway
   }
 }
 

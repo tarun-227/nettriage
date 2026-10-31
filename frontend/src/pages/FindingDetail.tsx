@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../lib/api";
 import { clock, offset, pct } from "../lib/format";
+import { href } from "../lib/router";
 import type { Finding, Hypothesis, Job, Report } from "../lib/types";
 import { ChevronDown, ChevronRight, Download, Info, Minus, Plus, Wrench } from "../components/icons";
 import { CopyButton, EntityChip, Section, SeverityBadge, VerdictChip, verdictBg } from "../components/ui";
@@ -9,9 +10,24 @@ export function FindingDetail({ job, report, finding: f }: { job: Job; report: R
   const [technical, setTechnical] = useState(false);
   const start = report.capture.first_ts;
   const runnerUp = f.hypotheses[1];
+  const incident = report.incidents?.find((i) => i.finding_ids.includes(f.id));
+  const siblings = incident
+    ? [...report.findings, ...report.ruled_out].filter((x) => incident.finding_ids.includes(x.id) && x.id !== f.id)
+    : [];
   return (
     <article className="min-w-0 space-y-4">
-      <header className="card p-5">
+      {incident && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-gold/50 bg-gold/10 p-4 sm:flex-row sm:items-center">
+          <span className="label shrink-0 text-primary">Connected incident</span>
+          <span className="min-w-0 flex-1 text-[13.5px]"><span className="font-semibold">{incident.title}.</span> {incident.summary}</span>
+          <span className="flex flex-wrap gap-1.5">
+            {siblings.map((s) => (
+              <a key={s.id} href={href(`/a/${job.id}/findings/${s.id}`)} className="btn px-2 py-1 text-[12px]">{s.title}</a>
+            ))}
+          </span>
+        </div>
+      )}
+      <header className="card p-6">
         <div className="flex flex-wrap items-center gap-3">
           <VerdictChip verdict={f.verdict} />
           <SeverityBadge severity={f.severity} />
@@ -20,7 +36,7 @@ export function FindingDetail({ job, report, finding: f }: { job: Job; report: R
             {runnerUp && <> · next most likely: {runnerUp.label} ({pct(runnerUp.probability)})</>}
           </span>
         </div>
-        <h2 className="mt-3 text-[20px] font-semibold leading-snug">{f.title}</h2>
+        <h2 className="display mt-3 text-[24px] font-semibold leading-snug">{f.title}</h2>
         <p className="mt-1 text-[12.5px] text-muted">
           {clock(f.time_start)} to {clock(f.time_end)}
           <span className="mono ml-2">({offset(f.time_start, start)} to {offset(f.time_end, start)})</span>

@@ -88,7 +88,20 @@ export interface Report {
   timeline: { t: number; packets: number; bytes: number }[];
   names: { name: string; count: number }[];
   device_names: { mac: string; hostname: string | null; vendor_class: string | null; ip: string | null }[];
+  incidents?: Incident[];
   analysis_seconds: number;
+}
+
+// Findings that the server linked because they share a root cause (for example one attacker
+// device behind two attacks). Optional: older reports don't have them.
+export interface Incident {
+  id: string;
+  title: string;
+  summary: string;
+  verdict: Verdict;
+  root_finding: string;
+  finding_ids: string[];
+  entities: Entity[];
 }
 
 export type JobStatus = "queued" | "running" | "done" | "rejected" | "error";

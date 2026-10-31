@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { SEVERITY_ORDER, clock, duration, num, offset } from "../lib/format";
+import { addRecent, forgetRecent } from "../lib/recent";
 import { href, navigate } from "../lib/router";
-import type { Finding, Job, Report } from "../lib/types";
+import type { Finding, Job, Report, Verdict } from "../lib/types";
 import {
-  Activity, Alert, Bars, CheckCircle, ChevronDown, ChevronRight, Download, Fingerprint, Info, List, Plus, Trash,
+  Activity, Bars, CheckCircle, ChevronDown, ChevronRight, Download, Fingerprint, Info, List, Plus, Trash, Wrench,
 } from "../components/icons";
-import { TopBar } from "../components/TopBar";
+import { VerdictSeal } from "../components/Scene3D";
 import { TimelineChart } from "../components/TimelineChart";
+import { Tilt } from "../components/Tilt";
+import { TopBar } from "../components/TopBar";
 import { ConfidenceBar, EntityChip, SeverityBadge, VerdictChip } from "../components/ui";
 import { FindingDetail } from "./FindingDetail";
-import { TimelineTab } from "./Timeline";
 import { IntegrityTab } from "./Integrity";
+import { TimelineTab } from "./Timeline";
 
 const TABS = [
   { key: "overview", label: "Overview", Icon: Activity },
@@ -30,7 +33,12 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
     review: alerts.filter((f) => f.verdict === "needs_review").length,
   };
 
+  useEffect(() => {
+    addRecent({ id: job.id, name: report.capture.file_name, at: Date.now(), attacks: counts.attack, faults: counts.fault });
+  }, [job.id, report.capture.file_name, counts.attack, counts.fault]);
+
   async function remove() {
+    forgetRecent(job.id);
     try {
       await api.remove(job.id);
     } finally {
@@ -41,50 +49,57 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
   return (
     <div className="flex min-h-full flex-col">
       <TopBar>
-        <span className="hidden h-5 w-px bg-line md:block" />
+        <span className="hidden h-6 w-px bg-white/20 md:block" />
         <div className="hidden min-w-0 md:block">
-          <p className="truncate text-[13px] font-medium">{report.capture.file_name}</p>
-          <p className="mono truncate text-[11px] text-muted" title={`SHA-256 ${report.capture.sha256}`}>
+          <p className="truncate text-[13px] font-semibold">{report.capture.file_name}</p>
+          <p className="mono truncate text-[11px] text-white/55" title={`SHA-256 ${report.capture.sha256}`}>
             sha256 {report.capture.sha256.slice(0, 16)}...
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <a className="btn" href={api.reportUrl(job.id)} download><Download size={14} /><span className="hidden lg:inline">Export JSON</span></a>
-          <button type="button" className="btn btn-danger" onClick={remove} title="Forget this report now">
-            <Trash size={14} /><span className="hidden lg:inline">Delete now</span>
+          <a className="btn btn-ghost-light px-2.5" href={api.reportUrl(job.id)} download title="Download the full report as JSON">
+            <Download size={15} /><span className="hidden xl:inline">Export</span>
+          </a>
+          <button type="button" className="btn btn-ghost-light px-2.5" onClick={remove} title="Forget this report now">
+            <Trash size={15} /><span className="hidden xl:inline">Delete</span>
           </button>
-          <a className="btn btn-primary" href={href("/")}><Plus size={14} /><span className="hidden lg:inline">New analysis</span></a>
+          <a className="btn btn-gold" href={href("/")}><Plus size={15} /><span className="hidden sm:inline">New analysis</span></a>
         </div>
       </TopBar>
-      <div className="flex flex-1">
-        <nav className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-52 shrink-0 border-r border-line p-3 md:block">
-          <ul className="space-y-0.5">
+      <div className="mx-auto flex w-full max-w-[1400px] flex-1">
+        <nav className="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 border-r border-line p-4 md:block" aria-label="Report">
+          <a href={href("/")} className="mb-4 flex items-center gap-1.5 text-[12.5px] text-muted hover:text-primary">
+            <ChevronRight size={13} className="rotate-180" /> Home
+          </a>
+          <ul className="space-y-1">
             {TABS.map(({ key, label, Icon }) => (
               <li key={key}>
                 <a href={href(`${base}/${key}`)}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${tab === key
-                    ? "bg-raised text-ink" : "text-muted hover:bg-raised/60 hover:text-ink"}`}>
-                  <Icon size={15} />
+                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors ${tab === key
+                    ? "bg-navy text-white shadow-card" : "text-muted hover:bg-raised hover:text-ink"}`}>
+                  <Icon size={16} className={tab === key ? "text-gold" : ""} />
                   {label}
                   {key === "findings" && alerts.length > 0 && (
-                    <span className="ml-auto rounded-md bg-line px-1.5 text-[11px] tabular-nums">{alerts.length}</span>
+                    <span className={`ml-auto rounded-md px-1.5 text-[11px] tabular-nums ${tab === key ? "bg-gold text-navy" : "bg-raised"}`}>
+                      {alerts.length}
+                    </span>
                   )}
                 </a>
               </li>
             ))}
           </ul>
-          <div className="mt-6 space-y-2 border-t border-line pt-4 text-[12px]">
+          <div className="mt-6 space-y-2.5 rounded-xl border border-line bg-surface p-3 text-[12.5px]">
             <Stat label="Attacks" value={counts.attack} cls="text-attack" />
             <Stat label="Faults" value={counts.fault} cls="text-fault" />
             <Stat label="Needs review" value={counts.review} cls="text-review" />
             <Stat label="Ruled out" value={report.ruled_out.length} cls="text-benign" />
           </div>
         </nav>
-        <main className="min-w-0 flex-1 px-4 py-5 sm:px-6">
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-8">
           <div className="mb-4 flex gap-1 overflow-x-auto md:hidden">
             {TABS.map(({ key, label }) => (
               <a key={key} href={href(`${base}/${key}`)}
-                className={`rounded-md px-3 py-1.5 text-[13px] ${tab === key ? "bg-raised" : "text-muted"}`}>{label}</a>
+                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold ${tab === key ? "bg-navy text-white" : "text-muted"}`}>{label}</a>
             ))}
           </div>
           {tab === "overview" && <Overview job={job} report={report} />}
@@ -99,7 +114,7 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
 
 function Stat({ label, value, cls }: { label: string; value: number; cls: string }) {
   return (
-    <div className="flex items-center justify-between px-3">
+    <div className="flex items-center justify-between">
       <span className="text-muted">{label}</span>
       <span className={`font-semibold tabular-nums ${value ? cls : "text-muted"}`}>{value}</span>
     </div>
@@ -112,48 +127,86 @@ function headline(report: Report): { text: string; tone: "attack" | "fault" | "o
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   if (attacks.length) {
     const also = faults.length ? ` and ${plural(faults.length, "fault")}` : "";
-    return { text: `${plural(attacks.length, "attack")}${also} found. Most urgent: ${attacks[0].title}.`, tone: "attack" };
+    return { text: `${plural(attacks.length, "attack")}${also} found`, tone: "attack" };
   }
-  if (faults.length) {
-    return { text: `No attacks. ${plural(faults.length, "problem")} with the network: ${faults[0].title}.`, tone: "fault" };
-  }
-  const ruled = report.ruled_out.length;
-  return {
-    text: ruled ? `No problems found. ${plural(ruled, "thing")} that looked suspicious ${ruled === 1 ? "was" : "were"} checked and ruled out.`
-      : "No problems found in this capture.",
-    tone: "ok",
-  };
+  if (faults.length) return { text: `No attacks, but ${plural(faults.length, "problem")} with the network`, tone: "fault" };
+  return { text: "No problems found", tone: "ok" };
 }
 
 function Overview({ job, report }: { job: Job; report: Report }) {
   const h = headline(report);
   const start = report.capture.first_ts;
-  const tone = { attack: "border-attack/40 bg-attack/5", fault: "border-fault/40 bg-fault/5", ok: "border-benign/40 bg-benign/5" }[h.tone];
-  const ToneIcon = h.tone === "ok" ? CheckCircle : Alert;
+  const top = sortFindings(report.findings)[0];
+  const incidents = report.incidents ?? [];
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <div className={`rounded-xl border p-5 ${tone}`}>
-        <div className="flex items-start gap-3">
-          <ToneIcon size={22} className={`mt-0.5 shrink-0 ${h.tone === "attack" ? "text-attack" : h.tone === "fault" ? "text-fault" : "text-benign"}`} />
-          <div>
-            <p className="text-[17px] font-semibold leading-snug">{h.text}</p>
-            <p className="mt-1 text-muted">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="hero-bg relative overflow-hidden rounded-3xl p-6 text-white shadow-lift sm:p-8">
+        <div className="flex items-start gap-5">
+          <VerdictSeal tone={h.tone} />
+          <div className="min-w-0">
+            <p className="eyebrow">Diagnosis</p>
+            <h1 className="display mt-1 text-[28px] font-semibold leading-tight sm:text-[32px]">{h.text}</h1>
+            <p className="mt-2 text-[14px] text-white/75">
               {num(report.ingest.packets_total)} packets over {duration(report.capture.duration)} from {report.devices} devices,
               analysed in {duration(report.analysis_seconds)}.
+              {report.ruled_out.length > 0 && ` ${report.ruled_out.length} suspicious-looking thing${report.ruled_out.length === 1 ? " was" : "s were"} checked and ruled out.`}
             </p>
           </div>
         </div>
       </div>
 
+      {top && (
+        <a href={href(`/a/${job.id}/findings/${top.id}`)}
+          className="card group flex flex-col gap-3 border-l-4 border-l-gold p-5 transition-shadow hover:shadow-lift sm:flex-row sm:items-center">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-primary"><Wrench size={19} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="label">Start here</span>
+            <span className="mt-0.5 block text-[15px] font-semibold">{top.title}</span>
+            <span className="mt-0.5 block text-[13.5px] text-muted">First step: {top.fix_steps[0]}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-primary">
+            Why and how <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </a>
+      )}
+
       {report.quality.map((q) => (
-        <div key={q.code} className="flex items-start gap-3 rounded-xl border border-review/40 bg-review/5 p-4">
+        <div key={q.code} className="flex items-start gap-3 rounded-2xl border border-review/40 bg-review/5 p-4">
           <Info size={18} className="mt-0.5 shrink-0 text-review" />
           <div>
-            <p className="font-medium">{q.message}</p>
+            <p className="font-semibold">{q.message}</p>
             {q.detail && <p className="mt-0.5 text-[13px] text-muted">{q.detail}</p>}
           </div>
         </div>
       ))}
+
+      {incidents.length > 0 && (
+        <div className="card overflow-hidden">
+          <p className="label border-b border-line px-5 py-3">Connected findings</p>
+          <ul className="divide-y divide-line">
+            {incidents.map((inc) => (
+              <li key={inc.id} className="px-5 py-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <VerdictChip verdict={inc.verdict} size="sm" />
+                  <span className="font-semibold">{inc.title}</span>
+                </div>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-muted">{inc.summary}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {inc.finding_ids.map((fid) => {
+                    const f = [...report.findings, ...report.ruled_out].find((x) => x.id === fid);
+                    return f ? (
+                      <a key={fid} href={href(`/a/${job.id}/findings/${fid}`)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-line bg-raised px-2 py-1 text-[12.5px] hover:border-primary/40">
+                        {fid === inc.root_finding && <span className="font-semibold text-primary">Root cause:</span>} {f.title}
+                      </a>
+                    ) : null;
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Kpi label="Packets" value={num(report.ingest.packets_total)}
@@ -165,12 +218,12 @@ function Overview({ job, report }: { job: Job; report: Report }) {
         <Kpi label="Ruled out" value={String(report.ruled_out.length)} tone="text-benign" sub="checked, not a problem" />
       </div>
 
-      <div className="card p-4">
-        <div className="mb-2 flex items-center justify-between">
+      <div className="card p-5">
+        <div className="mb-3 flex items-center justify-between">
           <p className="label">Traffic and findings over time</p>
-          <a className="link text-[12px]" href={href(`/a/${job.id}/timeline`)}>Open timeline</a>
+          <a className="link text-[12.5px]" href={href(`/a/${job.id}/timeline`)}>Open timeline</a>
         </div>
-        <TimelineChart report={report} jobId={job.id} height={110} />
+        <TimelineChart report={report} jobId={job.id} height={120} />
       </div>
 
       <FindingGroups job={job} report={report} />
@@ -182,12 +235,115 @@ function Overview({ job, report }: { job: Job; report: Report }) {
   );
 }
 
+function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
+  return (
+    <Tilt className="rounded-2xl" max={6}>
+      <div className="card h-full px-4 py-3.5">
+        <p className="label">{label}</p>
+        <p className={`display mt-1 text-[26px] font-semibold tabular-nums leading-tight ${tone && value !== "0" ? tone : ""}`}>{value}</p>
+        {sub && <p className="truncate text-[12px] text-muted">{sub}</p>}
+      </div>
+    </Tilt>
+  );
+}
+
+export function sortFindings(list: Finding[]): Finding[] {
+  const order = { attack: 0, fault: 1, needs_review: 2, benign: 3 };
+  return [...list].sort((a, b) => order[a.verdict] - order[b.verdict]
+    || SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || b.confidence - a.confidence);
+}
+
+function FindingGroups({ job, report }: { job: Job; report: Report }) {
+  const [open, setOpen] = useState(false);
+  const groups = [
+    { title: "Attacks", items: report.findings.filter((f) => f.verdict === "attack") },
+    { title: "Faults", items: report.findings.filter((f) => f.verdict === "fault") },
+    { title: "Needs review", items: report.findings.filter((f) => f.verdict === "needs_review") },
+  ].filter((g) => g.items.length);
+  return (
+    <div className="space-y-5">
+      {groups.map((g) => (
+        <div key={g.title} className="card overflow-hidden">
+          <p className="label border-b border-line px-5 py-3">{g.title}</p>
+          <FindingRows job={job} items={g.items} start={report.capture.first_ts} />
+        </div>
+      ))}
+      {report.ruled_out.length > 0 && (
+        <div className="card overflow-hidden">
+          <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
+            className="flex w-full items-center gap-2 px-5 py-3.5 text-left hover:bg-raised/60">
+            {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            <CheckCircle size={16} className="text-benign" />
+            <span className="font-semibold">Checked and ruled out</span>
+            <span className="text-muted">({report.ruled_out.length}) Looked suspicious, but the evidence says it's normal.</span>
+          </button>
+          {open && <FindingRows job={job} items={report.ruled_out} start={report.capture.first_ts} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function FindingRows({ job, items, start }: { job: Job; items: Finding[]; start: number | null }) {
+  return (
+    <ul className="divide-y divide-line">
+      {items.map((f) => (
+        <li key={f.id}>
+          <a href={href(`/a/${job.id}/findings/${f.id}`)}
+            className="flex flex-col gap-2 px-5 py-3.5 transition-colors hover:bg-raised/60 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+              <VerdictChip verdict={f.verdict} size="sm" />
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{f.title}</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {f.entities.slice(0, 3).map((e) => <EntityChip key={`${e.kind}-${e.value}-${e.role}`} {...e} />)}
+                </div>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-4 pl-[92px] sm:pl-0">
+              <SeverityBadge severity={f.severity} />
+              <ConfidenceBar value={f.confidence} verdict={f.verdict} width="w-16" />
+              <span className="mono hidden w-20 text-right text-muted lg:block">{offset(f.time_start, start)}</span>
+              <ChevronRight size={15} className="hidden text-muted sm:block" />
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ProtocolMix({ report }: { report: Report }) {
+  const entries = Object.entries(report.protocols);
+  const total = entries.reduce((s, [, n]) => s + n, 0);
+  if (!total) return null;
+  const colours = ["bg-navy", "bg-gold", "bg-review", "bg-benign", "bg-fault", "bg-muted", "bg-attack/70", "bg-ink/30"];
+  return (
+    <div className="card h-fit p-5">
+      <p className="label mb-3">Protocol mix</p>
+      <div className="flex h-3 overflow-hidden rounded-full bg-raised">
+        {entries.map(([name, n], i) => (
+          <span key={name} className={colours[i % colours.length]} style={{ width: `${(n / total) * 100}%` }} title={`${name}: ${num(n)}`} />
+        ))}
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[12.5px]">
+        {entries.map(([name, n], i) => (
+          <li key={name} className="flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-sm ${colours[i % colours.length]}`} />
+            {name} <span className="tabular-nums text-muted">{((n / total) * 100).toFixed(1)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // Text taken straight from packets (names, hostnames). The server escaped it, and React renders
 // it as plain text, so a hostname like "<script>" is just shown, never run.
 function Inventory({ report }: { report: Report }) {
   if (!report.names.length && !report.device_names.length) return null;
   return (
-    <div className="card p-4">
+    <div className="card p-5">
       <p className="label mb-3">Names and devices seen</p>
       {report.device_names.length > 0 && (
         <div className="mb-4">
@@ -219,146 +375,54 @@ function Inventory({ report }: { report: Report }) {
   );
 }
 
-function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
-  return (
-    <div className="card px-4 py-3">
-      <p className="label">{label}</p>
-      <p className={`mt-1 text-[22px] font-semibold tabular-nums leading-tight ${tone && value !== "0" ? tone : ""}`}>{value}</p>
-      {sub && <p className="truncate text-[12px] text-muted">{sub}</p>}
-    </div>
-  );
-}
-
-export function sortFindings(list: Finding[]): Finding[] {
-  const order = { attack: 0, fault: 1, needs_review: 2, benign: 3 };
-  return [...list].sort((a, b) => order[a.verdict] - order[b.verdict]
-    || SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || b.confidence - a.confidence);
-}
-
-function FindingGroups({ job, report }: { job: Job; report: Report }) {
-  const [open, setOpen] = useState(false);
-  const groups = [
-    { title: "Attacks", items: report.findings.filter((f) => f.verdict === "attack") },
-    { title: "Faults", items: report.findings.filter((f) => f.verdict === "fault") },
-    { title: "Needs review", items: report.findings.filter((f) => f.verdict === "needs_review") },
-  ].filter((g) => g.items.length);
-  return (
-    <div className="space-y-5">
-      {groups.map((g) => (
-        <div key={g.title} className="card overflow-hidden">
-          <p className="label border-b border-line px-4 py-2.5">{g.title}</p>
-          <FindingRows job={job} items={g.items} start={report.capture.first_ts} />
-        </div>
-      ))}
-      {report.ruled_out.length > 0 && (
-        <div className="card overflow-hidden">
-          <button type="button" onClick={() => setOpen(!open)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-left hover:bg-raised/50">
-            {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-            <CheckCircle size={15} className="text-benign" />
-            <span className="font-medium">Checked and ruled out</span>
-            <span className="text-muted">({report.ruled_out.length}) Looked suspicious, but the evidence says it's normal.</span>
-          </button>
-          {open && <FindingRows job={job} items={report.ruled_out} start={report.capture.first_ts} />}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function FindingRows({ job, items, start, selected }: { job: Job; items: Finding[]; start: number | null;
-  selected?: string }) {
-  return (
-    <ul className="divide-y divide-line">
-      {items.map((f) => (
-        <li key={f.id}>
-          <a href={href(`/a/${job.id}/findings/${f.id}`)}
-            className={`flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-raised/60 sm:flex-row sm:items-center sm:gap-4 ${selected === f.id
-              ? "bg-raised" : ""}`}>
-            <div className="flex min-w-0 flex-1 items-start gap-3">
-              <VerdictChip verdict={f.verdict} size="sm" />
-              <div className="min-w-0">
-                <p className="truncate font-medium">{f.title}</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
-                  {f.entities.slice(0, 3).map((e) => <EntityChip key={`${e.kind}-${e.value}-${e.role}`} {...e} />)}
-                </div>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-4 pl-[88px] sm:pl-0">
-              <SeverityBadge severity={f.severity} />
-              <ConfidenceBar value={f.confidence} verdict={f.verdict} width="w-16" />
-              <span className="mono hidden w-20 text-right text-muted lg:block">{offset(f.time_start, start)}</span>
-            </div>
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ProtocolMix({ report }: { report: Report }) {
-  const entries = Object.entries(report.protocols);
-  const total = entries.reduce((s, [, n]) => s + n, 0);
-  if (!total) return null;
-  const colours = ["bg-accent", "bg-review", "bg-benign", "bg-fault", "bg-attack/70", "bg-muted", "bg-ink/40"];
-  return (
-    <div className="card h-fit p-4">
-      <p className="label mb-3">Protocol mix</p>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-line">
-        {entries.map(([name, n], i) => (
-          <span key={name} className={colours[i % colours.length]} style={{ width: `${(n / total) * 100}%` }} title={`${name}: ${num(n)}`} />
-        ))}
-      </div>
-      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px]">
-        {entries.map(([name, n], i) => (
-          <li key={name} className="flex items-center gap-1.5">
-            <span className={`h-2 w-2 rounded-sm ${colours[i % colours.length]}`} />
-            {name} <span className="tabular-nums text-muted">{((n / total) * 100).toFixed(1)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+const FILTERS: { key: "all" | Verdict; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "attack", label: "Attacks" },
+  { key: "fault", label: "Faults" },
+  { key: "needs_review", label: "Needs review" },
+  { key: "benign", label: "Ruled out" },
+];
 
 function FindingsTab({ job, report, selected }: { job: Job; report: Report; selected?: string }) {
+  const [filter, setFilter] = useState<"all" | Verdict>("all");
   const all = [...sortFindings(report.findings), ...sortFindings(report.ruled_out)];
-  const current = all.find((f) => f.id === selected) ?? all[0];
+  const visible = filter === "all" ? all : all.filter((f) => f.verdict === filter);
+  const current = all.find((f) => f.id === selected) ?? visible[0] ?? all[0];
   if (!all.length) {
-    return <div className="card mx-auto max-w-3xl p-8 text-center text-muted">Nothing to report in this capture.</div>;
+    return <div className="card mx-auto max-w-3xl p-10 text-center text-muted">Nothing to report in this capture.</div>;
   }
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(320px,420px)_1fr]">
-      <div className="card h-fit overflow-hidden xl:sticky xl:top-[4.5rem] xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
-        <p className="label border-b border-line px-4 py-2.5">Problems ({report.findings.length})</p>
-        <CompactRows job={job} items={sortFindings(report.findings)} selected={current?.id} />
-        {report.ruled_out.length > 0 && (
-          <>
-            <p className="label border-y border-line px-4 py-2.5">Checked and ruled out ({report.ruled_out.length})</p>
-            <CompactRows job={job} items={sortFindings(report.ruled_out)} selected={current?.id} />
-          </>
-        )}
+    <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
+      <div className="card h-fit overflow-hidden xl:sticky xl:top-[5.5rem] xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto">
+        <div className="flex flex-wrap gap-1 border-b border-line p-2.5">
+          {FILTERS.map((fl) => {
+            const n = fl.key === "all" ? all.length : all.filter((f) => f.verdict === fl.key).length;
+            if (fl.key !== "all" && !n) return null;
+            return (
+              <button key={fl.key} type="button" onClick={() => setFilter(fl.key)} aria-pressed={filter === fl.key}
+                className={`rounded-lg px-2.5 py-1 text-[12.5px] font-semibold transition-colors ${filter === fl.key
+                  ? "bg-navy text-white" : "text-muted hover:bg-raised hover:text-ink"}`}>
+                {fl.label} <span className={filter === fl.key ? "text-gold" : ""}>{n}</span>
+              </button>
+            );
+          })}
+        </div>
+        <ul className="divide-y divide-line">
+          {visible.map((f) => (
+            <li key={f.id}>
+              <a href={href(`/a/${job.id}/findings/${f.id}`)}
+                className={`block px-4 py-3 transition-colors hover:bg-raised/60 ${current?.id === f.id ? "bg-raised shadow-[inset_3px_0_0_rgb(var(--gold))]" : ""}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <VerdictChip verdict={f.verdict} size="sm" />
+                  <ConfidenceBar value={f.confidence} verdict={f.verdict} width="w-12" />
+                </div>
+                <p className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-snug">{f.title}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
       {current && <FindingDetail key={current.id} job={job} report={report} finding={current} />}
     </div>
-  );
-}
-
-function CompactRows({ job, items, selected }: { job: Job; items: Finding[]; selected?: string }) {
-  return (
-    <ul className="divide-y divide-line">
-      {items.map((f) => (
-        <li key={f.id}>
-          <a href={href(`/a/${job.id}/findings/${f.id}`)}
-            className={`block px-4 py-2.5 transition-colors hover:bg-raised/60 ${selected === f.id ? "bg-raised shadow-[inset_3px_0_0_rgb(var(--accent))]" : ""}`}>
-            <div className="flex items-center justify-between gap-2">
-              <VerdictChip verdict={f.verdict} size="sm" />
-              <ConfidenceBar value={f.confidence} verdict={f.verdict} width="w-12" />
-            </div>
-            <p className="mt-1.5 line-clamp-2 text-[13px] font-medium leading-snug">{f.title}</p>
-          </a>
-        </li>
-      ))}
-    </ul>
   );
 }
