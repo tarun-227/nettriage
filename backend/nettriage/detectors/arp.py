@@ -1,4 +1,4 @@
-﻿"""ARP integrity: who really owns each IP address on the local network.
+"""ARP integrity: who really owns each IP address on the local network.
 
 Two kinds of finding come out of this detector:
 

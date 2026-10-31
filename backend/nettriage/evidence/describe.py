@@ -1,4 +1,4 @@
-﻿"""One-line, Wireshark-style summaries of packets, for evidence tables."""
+"""One-line, Wireshark-style summaries of packets, for evidence tables."""
 
 from __future__ import annotations
 

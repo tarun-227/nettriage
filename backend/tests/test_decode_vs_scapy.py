@@ -1,4 +1,4 @@
-﻿"""Differential tests: our decoders must agree with Scapy on well-formed packets.
+"""Differential tests: our decoders must agree with Scapy on well-formed packets.
 
 Scapy is a dev-only dependency. It builds the packets; it never parses for us.
 """
