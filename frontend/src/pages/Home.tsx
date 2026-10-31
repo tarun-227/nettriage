@@ -328,7 +328,8 @@ export function Home() {
       <footer className="border-t border-line bg-surface py-8">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 text-[12.5px] text-muted sm:px-6">
           <span className="display text-[15px] font-semibold text-navy dark:text-white">NetTriage <span className="text-gold">{config?.version ?? ""}</span></span>
-          <span>Runs on this computer · results kept for {config?.retention_minutes ?? 60} minutes · test only networks you own</span>
+          <span>Runs on this computer · results kept for {config?.retention_minutes ?? 60} minutes · test only networks you own ·{" "}
+            <a href={href("/designs")} className="link">Design concepts</a></span>
         </div>
       </footer>
 

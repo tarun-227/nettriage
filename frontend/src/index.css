@@ -136,6 +136,28 @@ body {
   background-size: 40px 40px;
 }
 
+/* --- Design concepts (#/designs) ------------------------------------------ */
+
+@keyframes dc-spin { to { transform: rotate(360deg); } }
+@keyframes dc-blip { 0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } 60% { opacity: 0.5; } }
+@keyframes dc-cube { from { transform: rotateX(-20deg) rotateY(0deg); } to { transform: rotateX(-20deg) rotateY(360deg); } }
+@keyframes dc-blob { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(60px, -40px) scale(1.2); }
+  100% { transform: translate(-40px, 30px) scale(0.9); } }
+@keyframes dc-flip { 0%, 30% { transform: rotateY(0deg); } 45%, 80% { transform: rotateY(180deg); } 95%, 100% { transform: rotateY(360deg); } }
+@keyframes dc-scan { from { background-position: 0 0; } to { background-position: 0 6px; } }
+@keyframes dc-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.94; } 50% { opacity: 1; } }
+@keyframes dc-caret { 50% { opacity: 0; } }
+@keyframes dc-siren { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+@keyframes dc-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes dc-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.dc-face { backface-visibility: hidden; }
+.dc-scanlines {
+  background: repeating-linear-gradient(rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 3px);
+  animation: dc-scan 0.5s linear infinite;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgb(var(--line)) transparent;

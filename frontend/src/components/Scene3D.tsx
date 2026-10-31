@@ -2,14 +2,14 @@
 // from the network. They respect prefers-reduced-motion (see index.css).
 import type { CSSProperties } from "react";
 
-type Faces = { top: string; light: string; dark: string };
+export type Faces = { top: string; light: string; dark: string };
 
 const NAVY: Faces = { top: "#2c4573", light: "#22375e", dark: "#162641" };
 const GOLD: Faces = { top: "#e2c058", light: "#c9a227", dark: "#9c7c15" };
 const RED: Faces = { top: "#d9534f", light: "#b52f2b", dark: "#86201d" };
 const PALE: Faces = { top: "#f8f7f4", light: "#dcd7ca", dark: "#b9b2a1" };
 
-function Box({ x, y, w, d, h, c, children }: {
+export function Box({ x, y, w, d, h, c, children }: {
   x: number; y: number; w: number; d: number; h: number; c: Faces; children?: React.ReactNode;
 }) {
   const face = (style: CSSProperties, bg: string) => <div className="face" style={{ ...style, background: bg }} />;
