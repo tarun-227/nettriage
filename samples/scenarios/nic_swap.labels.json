@@ -1,0 +1,10 @@
+{
+  "scenario": "nic_swap",
+  "category": "negative",
+  "title": "PC with a replaced network card",
+  "description": "A PC's network adapter is swapped. Its IP address moves to a new MAC once, after a fresh DHCP lease, and stays there. A single, explained change, not spoofing.",
+  "seed": 1,
+  "packets": 2599,
+  "labels": [],
+  "quality": []
+}

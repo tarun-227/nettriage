@@ -1,0 +1,10 @@
+{
+  "scenario": "pihole_blocking",
+  "category": "negative",
+  "title": "Ad-blocking DNS (Pi-hole)",
+  "description": "The office DNS blocks ad and tracking domains by answering 0.0.0.0. Odd answers, but deliberate.",
+  "seed": 1,
+  "packets": 1963,
+  "labels": [],
+  "quality": []
+}

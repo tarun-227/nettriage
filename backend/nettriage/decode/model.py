@@ -20,6 +20,9 @@ PROTO_UDP = 17
 PROTO_ICMPV6 = 58
 PROTO_VRRP = 112
 
+# The unspecified IPv4 address, used as the sender of ARP probes and DHCP discovers.
+UNSPECIFIED = "0.0.0.0"  # noqa: S104 - an address we compare against, never one we bind to
+
 ETH_IPV4 = 0x0800
 ETH_ARP = 0x0806
 ETH_IPV6 = 0x86DD

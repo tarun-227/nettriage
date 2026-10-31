@@ -1,0 +1,20 @@
+{
+  "scenario": "dns_timeout",
+  "category": "fault",
+  "title": "DNS server not answering",
+  "description": "Partway through, the DNS server goes silent. PCs repeat every question and give up.",
+  "seed": 1,
+  "packets": 1053,
+  "labels": [
+    {
+      "kind": "dns_failure",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.1"
+      ],
+      "start": 1730390423.018,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

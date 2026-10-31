@@ -1,0 +1,20 @@
+{
+  "scenario": "port_scan_horizontal",
+  "category": "attack",
+  "title": "Port scan: sweep of another network",
+  "description": "An infected PC sweeps a whole /24 for SSH and Remote Desktop. Most addresses never answer.",
+  "seed": 1,
+  "packets": 3013,
+  "labels": [
+    {
+      "kind": "port_scan",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.13"
+      ],
+      "start": 1730390411.669,
+      "end": 1730390415.279
+    }
+  ],
+  "quality": []
+}

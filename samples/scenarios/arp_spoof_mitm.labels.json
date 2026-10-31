@@ -1,0 +1,21 @@
+{
+  "scenario": "arp_spoof_mitm",
+  "category": "attack",
+  "title": "ARP spoofing: two-way man-in-the-middle",
+  "description": "A device on the LAN tells one PC that it is the router, and tells the router that it is that PC. All of the PC's traffic now flows through the attacker, who forwards it so nothing looks broken.",
+  "seed": 1,
+  "packets": 2891,
+  "labels": [
+    {
+      "kind": "arp_spoofing",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.1",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390425.724,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

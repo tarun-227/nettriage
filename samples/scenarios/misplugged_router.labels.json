@@ -1,0 +1,20 @@
+{
+  "scenario": "misplugged_router",
+  "category": "fault",
+  "title": "Home router plugged in by mistake",
+  "description": "Someone plugged a home Wi-Fi router into the office network by its LAN port. It hands out 192.168.0.x addresses, and laptops that take one lose their connection.",
+  "seed": 1,
+  "packets": 2420,
+  "labels": [
+    {
+      "kind": "dhcp_misconfigured_server",
+      "verdict": "fault",
+      "entities": [
+        "192.168.0.1"
+      ],
+      "start": 1730390414.301,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

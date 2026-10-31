@@ -1,0 +1,20 @@
+{
+  "scenario": "duplicate_ip",
+  "category": "fault",
+  "title": "Duplicate IP address",
+  "description": "Someone gave a new laptop a static address that a PC already uses. Both machines now answer for the same IP, so connections to it break at random.",
+  "seed": 1,
+  "packets": 2577,
+  "labels": [
+    {
+      "kind": "duplicate_ip",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.14"
+      ],
+      "start": 1730390416.669,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

@@ -1,0 +1,10 @@
+{
+  "scenario": "cdn_rotation",
+  "category": "negative",
+  "title": "CDN address rotation",
+  "description": "A content network returns a different address almost every time it is asked, which is how load balancing works, not hijacking.",
+  "seed": 1,
+  "packets": 2242,
+  "labels": [],
+  "quality": []
+}

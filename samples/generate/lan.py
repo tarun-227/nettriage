@@ -8,7 +8,8 @@ produces the same file.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pathlib import Path
 
 from scapy.all import (
     ARP,
@@ -23,12 +24,12 @@ from scapy.all import (
     Ether,
     Raw,
     conf,
-    wrpcap,
 )
 
 conf.verb = 0
 
 TS0 = 1_730_390_400.0  # 2024-10-31 16:00:00 UTC
+SNAPLEN = 400
 BCAST = "ff:ff:ff:ff:ff:ff"
 ZERO_MAC = "00:00:00:00:00:00"
 
@@ -51,7 +52,7 @@ class Host:
     ip: str
     mac: str
     name: str = ""
-    ip_id: int = field(default_factory=lambda: random.randrange(1, 60000))
+    ip_id: int = 1  # Lan.host() seeds this from the scenario RNG
 
     def next_id(self) -> int:
         self.ip_id = (self.ip_id + 1) & 0xFFFF
@@ -71,27 +72,38 @@ class Trace:
         return sorted(self.items, key=lambda x: x[0])
 
     def write(self, path) -> int:
-        pkts = []
+        """Write with a 400-byte snap length, like `tcpdump -s 400`.
+
+        ARP, DNS and DHCP fit whole; TCP payload beyond that is cut, which keeps
+        the sample files small (the payload is filler anyway).
+        """
+        from nettriage.evidence.pcapwriter import pcap_bytes
+
+        rows = []
         for t, p in self.sorted():
-            p.time = TS0 + t
-            pkts.append(p)
-        wrpcap(str(path), pkts)
-        return len(pkts)
+            raw = bytes(p)
+            rows.append((int(round((TS0 + t) * 1e9)), raw[:SNAPLEN], len(raw)))
+        Path(path).write_bytes(pcap_bytes(rows, linktype=1, snaplen=SNAPLEN))
+        return len(rows)
 
 
 class Lan:
     def __init__(self, rng: random.Random, n_clients: int = 8, subnet: str = "192.168.1"):
         self.rng = rng
         self.subnet = subnet
-        self.gw = Host(f"{subnet}.1", "3c:52:82:10:00:01", "router")
+        self.gw = self.host(f"{subnet}.1", "3c:52:82:10:00:01", "router")
         self.resolver = self.gw  # small office: the router is the DNS resolver
+        self.resolver_ttl = 64   # IP TTL of the resolver's replies as they reach the LAN
         self.clients = [
-            Host(f"{subnet}.{10 + i}", f"a4:5e:60:{i:02x}:{rng.randrange(256):02x}:{rng.randrange(256):02x}",
-                 f"pc-{i + 1:02d}")
+            self.host(f"{subnet}.{10 + i}",
+                      f"a4:5e:60:{i:02x}:{rng.randrange(256):02x}:{rng.randrange(256):02x}", f"pc-{i + 1:02d}")
             for i in range(n_clients)
         ]
         self.trace = Trace()
         self.arp_cache: dict[tuple[str, str], float] = {}
+
+    def host(self, ip: str, mac: str, name: str = "") -> Host:
+        return Host(ip, mac, name, self.rng.randrange(1, 60000))
 
     # --- primitives -----------------------------------------------------
 
@@ -133,10 +145,11 @@ class Lan:
             id=txid, rd=1, qd=DNSQR(qname=name, qtype=qtype))
 
     def dns_response_pkt(self, src_ip: str, src_mac: str, c: Host, name: str, txid: int, sport: int,
-                         answers: list[str], rcode: int = 0, ttl: int = 300, qtype: str = "A", ip_id=None):
+                         answers: list[str], rcode: int = 0, ttl: int = 300, qtype: str = "A", ip_id=None,
+                         ip_ttl: int = 64):
         an = [DNSRR(rrname=name, type=qtype, rdata=a, ttl=ttl) for a in answers] or None
         return (Ether(src=src_mac, dst=c.mac)
-                / IP(src=src_ip, dst=c.ip, ttl=64, id=ip_id if ip_id is not None else self.rng.randrange(65536))
+                / IP(src=src_ip, dst=c.ip, ttl=ip_ttl, id=ip_id if ip_id is not None else self.rng.randrange(65536))
                 / UDP(sport=53, dport=sport)
                 / DNS(id=txid, qr=1, rd=1, ra=1, rcode=rcode, qd=DNSQR(qname=name, qtype=qtype), an=an))
 
@@ -154,7 +167,7 @@ class Lan:
             if answers is None:
                 answers = [SITES.get(name, "192.0.2.1")] if rcode == 0 else []
             self.trace.add(t + rtt, self.dns_response_pkt(resolver.ip, resolver.mac, c, name, txid, sport,
-                                                          answers, rcode, ttl))
+                                                          answers, rcode, ttl, ip_ttl=self.resolver_ttl))
         return t + rtt
 
     # --- TCP ------------------------------------------------------------
@@ -162,8 +175,13 @@ class Lan:
     def tcp_session(self, t: float, c: Host, server_ip: str, dport: int, rtt: float | None = None,
                     server_mac: str | None = None, req: int = 400, resp: int | None = None,
                     down_loss: float = 0.0, up_loss: float = 0.0, close: str = "fin",
-                    server_ttl: int = 54, mss: int = 1448) -> float:
-        """A complete client/server exchange as seen from a LAN mirror port."""
+                    server_ttl: int = 54, mss: int = 1448, loss_side: str = "wan") -> float:
+        """A complete client/server exchange as seen from a LAN mirror port.
+
+        ``loss_side`` says where lost packets disappear relative to the mirror port:
+        "wan" (between the office and the server) or "lan" (on the client's own link,
+        so the mirror still sees the original before it is lost).
+        """
         rng = self.rng
         rtt = rng.uniform(0.015, 0.06) if rtt is None else rtt
         server_mac = server_mac or self.gw.mac
@@ -226,6 +244,8 @@ class Lan:
             ts += rng.uniform(0.0002, 0.0012)
             if rng.random() < down_loss:
                 lost.append((seq, n))
+                if loss_side == "lan":
+                    tr.add(ts, S("A", seq, cnext, n))  # the mirror saw it; the client never got it
                 continue
             tr.add(ts, S("PA" if i == len(segs) - 1 else "A", seq, cnext, n))
             received.add(seq)
@@ -320,10 +340,11 @@ class Lan:
                 if ip:
                     for k in range(rng.choice([1, 1, 2, 3])):
                         rtt = rtt_for(ip) if rtt_for else None
-                        down, up = loss_for(c, ip) if loss_for else (0.0, 0.0)
+                        down, up, *side = loss_for(c, ip) if loss_for else (0.0, 0.0)
                         close = "rst" if rng.random() < 0.15 else "fin"  # browsers often RST-close
                         self.tcp_session(t_ans + 0.001 + k * 0.01, c, ip, rng.choice([443, 443, 443, 80]),
-                                         rtt=rtt, close=close, down_loss=down, up_loss=up)
+                                         rtt=rtt, close=close, down_loss=down, up_loss=up,
+                                         loss_side=side[0] if side else "wan")
                 if rng.random() < 0.1:
                     self.mdns_announce(t + rng.uniform(0, 1), c)
                 t += rng.expovariate(intensity / 4.0)

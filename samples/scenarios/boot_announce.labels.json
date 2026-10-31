@@ -1,0 +1,10 @@
+{
+  "scenario": "boot_announce",
+  "category": "negative",
+  "title": "Devices joining the network",
+  "description": "Three laptops join, get addresses by DHCP, check that nobody else uses them (ARP probes) and announce themselves. Textbook behaviour.",
+  "seed": 1,
+  "packets": 2908,
+  "labels": [],
+  "quality": []
+}

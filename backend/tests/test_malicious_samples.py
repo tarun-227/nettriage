@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 from helpers import read_all
-
 from nettriage.ingest.capture import CaptureFormatError
 
 SAMPLES = Path(__file__).resolve().parents[2] / "samples" / "malicious"

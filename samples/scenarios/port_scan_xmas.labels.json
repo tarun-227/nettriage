@@ -1,0 +1,20 @@
+{
+  "scenario": "port_scan_xmas",
+  "category": "attack",
+  "title": "Port scan: stealth Xmas scan",
+  "description": "Probes with the FIN, PSH and URG flags set at once, a combination normal TCP never sends. Closed ports reset, open ports stay silent.",
+  "seed": 1,
+  "packets": 2828,
+  "labels": [
+    {
+      "kind": "port_scan",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.66"
+      ],
+      "start": 1730390427.133,
+      "end": 1730390427.543
+    }
+  ],
+  "quality": []
+}

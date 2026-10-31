@@ -91,7 +91,9 @@ class Differential:
 
         verdict = self.hypotheses[top].verdict
         if not sufficient:
-            verdict = Verdict.NEEDS_REVIEW
+            # Thin evidence never raises an alert. A benign explanation stays benign, just less sure.
+            if verdict != Verdict.BENIGN:
+                verdict = Verdict.NEEDS_REVIEW
             confidence = min(confidence, INSUFFICIENT_CAP)
         elif verdict in (Verdict.ATTACK, Verdict.FAULT) and confidence < ALERT_THRESHOLD:
             verdict = Verdict.NEEDS_REVIEW

@@ -1,0 +1,20 @@
+{
+  "scenario": "refused_service",
+  "category": "fault",
+  "title": "Service refusing connections",
+  "description": "The office app server is up, but the app on port 8080 has stopped: every connection is refused straight away. PCs keep retrying.",
+  "seed": 1,
+  "packets": 2514,
+  "labels": [
+    {
+      "kind": "connection_refused",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.50"
+      ],
+      "start": 1730390412.165,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

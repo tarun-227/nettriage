@@ -1,0 +1,20 @@
+{
+  "scenario": "dns_servfail",
+  "category": "fault",
+  "title": "DNS server failing (SERVFAIL)",
+  "description": "Partway through, the router's DNS starts answering every question with 'server failure': its upstream is broken. Websites stop loading even though the network is up.",
+  "seed": 1,
+  "packets": 1110,
+  "labels": [
+    {
+      "kind": "dns_failure",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.1"
+      ],
+      "start": 1730390423.018,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

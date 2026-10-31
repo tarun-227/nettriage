@@ -1,0 +1,10 @@
+{
+  "scenario": "vrrp_failover",
+  "category": "negative",
+  "title": "Router failover (VRRP)",
+  "description": "The office has two routers sharing one gateway address. The main one fails and the backup takes over, announcing the gateway address with its own MAC. It looks like ARP spoofing, but it is planned redundancy.",
+  "seed": 1,
+  "packets": 2404,
+  "labels": [],
+  "quality": []
+}

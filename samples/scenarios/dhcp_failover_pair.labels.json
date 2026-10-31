@@ -1,0 +1,10 @@
+{
+  "scenario": "dhcp_failover_pair",
+  "category": "negative",
+  "title": "Two DHCP servers in failover",
+  "description": "Two DHCP servers share the job and both answer, handing out different addresses with the same gateway and DNS. Redundant, not rogue.",
+  "seed": 1,
+  "packets": 2417,
+  "labels": [],
+  "quality": []
+}

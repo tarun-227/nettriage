@@ -1,0 +1,22 @@
+{
+  "scenario": "dns_spoof_race",
+  "category": "attack",
+  "title": "DNS spoofing: forged answers race the real resolver",
+  "description": "An attacker on the Wi-Fi sees a PC's DNS questions and answers them first, pointing the mail and university sites at itself. The real answers arrive a few milliseconds later and are ignored.",
+  "seed": 1,
+  "packets": 2654,
+  "labels": [
+    {
+      "kind": "dns_spoofing",
+      "verdict": "attack",
+      "entities": [
+        "mail.example.org",
+        "www.iiitdm.ac.in",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390417.899,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

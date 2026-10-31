@@ -1,0 +1,20 @@
+{
+  "scenario": "unreachable_lan_host",
+  "category": "fault",
+  "title": "Office printer switched off",
+  "description": "PCs keep asking 'who has 192.168.1.60?' and nobody answers: the device is off or unplugged.",
+  "seed": 1,
+  "packets": 2418,
+  "labels": [
+    {
+      "kind": "host_unreachable",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.60"
+      ],
+      "start": 1730390433.203,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

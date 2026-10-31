@@ -1,0 +1,20 @@
+{
+  "scenario": "unreachable_remote",
+  "category": "fault",
+  "title": "Remote service not answering",
+  "description": "A cloud file service resolves fine, but connections to it get no reply at all. PCs retry with growing delays until they give up.",
+  "seed": 1,
+  "packets": 2442,
+  "labels": [
+    {
+      "kind": "host_unreachable",
+      "verdict": "fault",
+      "entities": [
+        "203.0.113.99"
+      ],
+      "start": 1730390405.835,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

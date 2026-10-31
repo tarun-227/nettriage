@@ -1,0 +1,10 @@
+{
+  "scenario": "nxdomain_probes",
+  "category": "negative",
+  "title": "Normal failed lookups",
+  "description": "Browsers look up random names at startup to detect DNS hijacking, and Windows asks for wpad and isatap. These fail by design (NXDOMAIN).",
+  "seed": 1,
+  "packets": 2677,
+  "labels": [],
+  "quality": []
+}

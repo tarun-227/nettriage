@@ -1,0 +1,21 @@
+{
+  "scenario": "rogue_dhcp",
+  "category": "attack",
+  "title": "Rogue DHCP server",
+  "description": "A device answers DHCP faster than the real router and hands new laptops an address in the right subnet, but names itself as their gateway and DNS server. They keep working while it watches everything.",
+  "seed": 1,
+  "packets": 3078,
+  "labels": [
+    {
+      "kind": "rogue_dhcp",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.66",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390408.246,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

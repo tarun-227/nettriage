@@ -1,0 +1,21 @@
+{
+  "scenario": "arp_spoof_oneway",
+  "category": "attack",
+  "title": "ARP spoofing: one-way interception",
+  "description": "Only the victim PC is poisoned: its outgoing traffic goes through the attacker, replies come back directly. Common with simple tools such as arpspoof.",
+  "seed": 1,
+  "packets": 2840,
+  "labels": [
+    {
+      "kind": "arp_spoofing",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.1",
+        "08:00:27:3e:5a:11"
+      ],
+      "start": 1730390429.483,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

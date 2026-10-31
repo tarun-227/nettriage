@@ -1,0 +1,29 @@
+{
+  "scenario": "lossy_link_plus_scan",
+  "category": "mixed",
+  "title": "Lossy link and a port scan at the same time",
+  "description": "Retransmissions to one server (a fault) and a port scan from a LAN device (an attack) in the same capture. Both must be reported, each with the right label.",
+  "seed": 1,
+  "packets": 2669,
+  "labels": [
+    {
+      "kind": "tcp_retransmissions",
+      "verdict": "fault",
+      "entities": [
+        "151.101.1.69"
+      ],
+      "start": 1730390400.0,
+      "end": 1730390460.0
+    },
+    {
+      "kind": "port_scan",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.66"
+      ],
+      "start": 1730390425.73,
+      "end": 1730390426.41
+    }
+  ],
+  "quality": []
+}

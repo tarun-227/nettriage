@@ -1,0 +1,10 @@
+{
+  "scenario": "busy_client",
+  "category": "negative",
+  "title": "One very busy PC",
+  "description": "A developer's PC opens over a hundred connections to the same code-hosting site within seconds (a big download, many parallel requests). Lots of connections, but all to one place and all successful.",
+  "seed": 1,
+  "packets": 3482,
+  "labels": [],
+  "quality": []
+}

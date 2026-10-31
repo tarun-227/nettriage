@@ -1,0 +1,10 @@
+{
+  "scenario": "clean_office",
+  "category": "negative",
+  "title": "Normal office traffic",
+  "description": "Six PCs browsing, with DNS lookups, HTTPS sessions, browsers resetting finished connections, and background chatter. Nothing is wrong.",
+  "seed": 1,
+  "packets": 2406,
+  "labels": [],
+  "quality": []
+}

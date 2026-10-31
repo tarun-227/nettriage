@@ -1,0 +1,20 @@
+{
+  "scenario": "port_scan_syn",
+  "category": "attack",
+  "title": "Port scan: SYN scan of a file server",
+  "description": "A device probes a few hundred ports on the office NAS, as `nmap -sS` does, looking for services to attack. Open ports answer, closed ports reset.",
+  "seed": 1,
+  "packets": 2895,
+  "labels": [
+    {
+      "kind": "port_scan",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.66"
+      ],
+      "start": 1730390427.133,
+      "end": 1730390427.663
+    }
+  ],
+  "quality": []
+}

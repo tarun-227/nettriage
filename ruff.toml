@@ -1,0 +1,10 @@
+line-length = 120
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = ["S101"]  # asserts are fine in tests
+
+[lint.per-file-ignores]
+"backend/tests/*" = ["E501", "S311"]  # long literal packets; random is fine for test data
+"samples/generate/*" = ["S311", "S104"]  # seeded randomness is the point; 0.0.0.0 is packet content

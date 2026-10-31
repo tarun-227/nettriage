@@ -1,0 +1,20 @@
+{
+  "scenario": "dns_slow",
+  "category": "fault",
+  "title": "Slow DNS",
+  "description": "The DNS server still answers, but each answer takes one to two and a half seconds, so every new website feels sluggish.",
+  "seed": 1,
+  "packets": 2332,
+  "labels": [
+    {
+      "kind": "dns_slow",
+      "verdict": "fault",
+      "entities": [
+        "192.168.1.1"
+      ],
+      "start": 1730390418.018,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

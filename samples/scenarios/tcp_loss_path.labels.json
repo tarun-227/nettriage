@@ -1,0 +1,20 @@
+{
+  "scenario": "tcp_loss_path",
+  "category": "fault",
+  "title": "Packet loss on the path to one server",
+  "description": "Every PC sees retransmissions, but only when talking to one content server: the problem is that server or the path to it, not the office network.",
+  "seed": 1,
+  "packets": 2366,
+  "labels": [
+    {
+      "kind": "tcp_retransmissions",
+      "verdict": "fault",
+      "entities": [
+        "151.101.1.69"
+      ],
+      "start": 1730390400.0,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

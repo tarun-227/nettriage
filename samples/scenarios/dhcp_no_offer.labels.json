@@ -1,0 +1,18 @@
+{
+  "scenario": "dhcp_no_offer",
+  "category": "fault",
+  "title": "DHCP server down",
+  "description": "New laptops ask for an address again and again and nobody offers one, so they never get online.",
+  "seed": 1,
+  "packets": 2410,
+  "labels": [
+    {
+      "kind": "dhcp_no_offer",
+      "verdict": "fault",
+      "entities": [],
+      "start": 1730390407.517,
+      "end": 1730390460.0
+    }
+  ],
+  "quality": []
+}

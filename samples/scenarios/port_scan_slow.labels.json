@@ -1,0 +1,20 @@
+{
+  "scenario": "port_scan_slow",
+  "category": "attack",
+  "title": "Port scan: slow scan",
+  "description": "A patient attacker probes one port every second or two to slip under rate-based alarms. NetTriage's sequential test does not care about rate, only about how often first contacts fail.",
+  "seed": 1,
+  "packets": 2663,
+  "labels": [
+    {
+      "kind": "port_scan",
+      "verdict": "attack",
+      "entities": [
+        "192.168.1.66"
+      ],
+      "start": 1730390407.044,
+      "end": 1730390456.969
+    }
+  ],
+  "quality": []
+}

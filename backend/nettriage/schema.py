@@ -136,6 +136,7 @@ class Report(BaseModel):
     findings: list[Finding] = Field(default_factory=list)
     ruled_out: list[Finding] = Field(default_factory=list)
     hosts: int = 0
+    devices: int = 0
     protocols: dict[str, int] = Field(default_factory=dict)
     timeline: list[TimelineBucket] = Field(default_factory=list)
     analysis_seconds: float = 0.0

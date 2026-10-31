@@ -18,7 +18,6 @@ from helpers import (
 )
 from hypothesis import given, settings
 from hypothesis import strategies as st
-
 from nettriage.config import Limits
 from nettriage.decode import decode
 from nettriage.ingest.capture import CaptureFormatError, IngestCounters, RawPacket

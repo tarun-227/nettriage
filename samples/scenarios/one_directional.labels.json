@@ -1,0 +1,12 @@
+{
+  "scenario": "one_directional",
+  "category": "negative",
+  "title": "One-directional capture",
+  "description": "The mirror port was set to copy only outgoing traffic. Every question looks unanswered, but the network is fine: the capture is incomplete. NetTriage should say so instead of blaming the network.",
+  "seed": 1,
+  "packets": 1266,
+  "labels": [],
+  "quality": [
+    "one_directional"
+  ]
+}
