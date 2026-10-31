@@ -1,0 +1,29 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Local config and scratch
+.env
+*.log
+/tmp/
+eval/generated/
+samples/generated/
+
+# Captures are only committed from the curated sample folders
+*.pcap
+*.pcapng
+*.cap
+!samples/scenarios/*.pcap
+!samples/scenarios/*.pcapng
+!samples/lab/*.pcap
+!samples/lab/*.pcapng
+!samples/malicious/*

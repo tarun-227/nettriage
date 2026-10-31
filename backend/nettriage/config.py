@@ -1,0 +1,68 @@
+"""Runtime limits and settings.
+
+Every limit is a defence against a hostile or broken capture, so each has a hard
+default and can only be changed through environment variables, never through
+the HTTP API.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+MIB = 1024 * 1024
+
+
+def _env_int(name: str, default: int, lo: int, hi: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return max(lo, min(hi, value))
+
+
+@dataclass(frozen=True, slots=True)
+class Limits:
+    max_upload_bytes: int = 500 * MIB
+    max_packets: int = 5_000_000
+    # A single packet record larger than this is treated as file corruption.
+    # 256 KiB matches libpcap's largest snapshot length.
+    max_record_bytes: int = 262_144
+    # pcapng blocks can carry metadata as well as packets; 16 MiB is far above
+    # anything a real writer produces.
+    max_block_bytes: int = 16 * MIB
+    max_analysis_seconds: int = 300
+    # Bounded state tables keep a flood of spoofed sources from exhausting memory.
+    max_flows: int = 200_000
+    max_dns_transactions: int = 100_000
+    max_hosts: int = 50_000
+    # Evidence frames kept in memory per finding, for evidence.pcap export.
+    max_evidence_frames: int = 200
+    # Examples of skipped packets kept for the integrity report.
+    max_skip_examples: int = 50
+
+
+def load_limits() -> Limits:
+    return Limits(
+        max_upload_bytes=_env_int("NETTRIAGE_MAX_UPLOAD_MB", 500, 1, 4096) * MIB,
+        max_packets=_env_int("NETTRIAGE_MAX_PACKETS", 5_000_000, 1, 50_000_000),
+        max_analysis_seconds=_env_int("NETTRIAGE_MAX_ANALYSIS_SECONDS", 300, 5, 3600),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ServerSettings:
+    host: str = "127.0.0.1"
+    port: int = 8765
+    result_ttl_seconds: int = 3600
+
+
+def load_server_settings() -> ServerSettings:
+    return ServerSettings(
+        host=os.environ.get("NETTRIAGE_HOST", "127.0.0.1"),
+        port=_env_int("NETTRIAGE_PORT", 8765, 1, 65535),
+        result_ttl_seconds=_env_int("NETTRIAGE_RESULT_TTL_MINUTES", 60, 1, 24 * 60) * 60,
+    )
