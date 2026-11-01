@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="NetTriage">
+  <rect width="512" height="512" rx="112" fill="#05080a"/>
+  <!-- N: two stems and a diagonal -->
+  <path d="M112 384V128L232 320V128" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="square" stroke-linejoin="miter"/>
+  <!-- T: bar and stem -->
+  <path d="M276 128H408M342 128V384" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="square"/>
+  <!-- the one neon accent: a packet dot -->
+  <rect x="392" y="356" width="36" height="36" rx="6" fill="#2bff88"/>
+</svg>

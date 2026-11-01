@@ -34,9 +34,10 @@ def create_app(limits: Limits | None = None, settings: ServerSettings | None = N
     app = FastAPI(title="NetTriage", version=__version__, docs_url=None, redoc_url=None, openapi_url=None,
                   lifespan=lifespan)
     app.state.jobs = jobs
-    # Only answer to local host names. This blocks DNS-rebinding attacks, where a web page the
-    # user visits points its own domain at 127.0.0.1 to reach this server.
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "[::1]", "::1"])
+    # Only answer to known host names: local ones, plus a deployment's own domain when one is
+    # configured. This blocks DNS-rebinding attacks, where a web page the user visits points its
+    # own domain at 127.0.0.1 to reach this server.
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(settings.allowed_hosts))
     app.add_middleware(SecurityHeadersMiddleware)
     app.include_router(build_router(jobs, limits))
 

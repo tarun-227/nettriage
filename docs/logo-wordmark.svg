@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="NetTriage">
+  <rect width="1200" height="300" rx="40" fill="#05080a"/>
+  <g transform="translate(40 30) scale(0.469)">
+    <path d="M112 384V128L232 320V128" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="square" stroke-linejoin="miter"/>
+    <path d="M276 128H408M342 128V384" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="square"/>
+    <rect x="392" y="356" width="36" height="36" rx="6" fill="#2bff88"/>
+  </g>
+  <text x="300" y="172" font-family="Cascadia Code, Consolas, SFMono-Regular, Menlo, monospace" font-size="104" font-weight="700"
+    letter-spacing="4" fill="#ffffff">NetTriage<tspan fill="#2bff88">.</tspan></text>
+  <text x="304" y="228" font-family="Cascadia Code, Consolas, SFMono-Regular, Menlo, monospace" font-size="24" letter-spacing="8"
+    fill="#809c90">BROKEN OR BREACHED?</text>
+</svg>

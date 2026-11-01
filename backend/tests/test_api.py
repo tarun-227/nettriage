@@ -129,3 +129,27 @@ def test_samples_listing_and_hostile_sample(client):
     data = wait_done(client, r.json()["id"])
     assert any(f["kind"] == "dns_spoofing" for f in data["report"]["findings"])
     assert (ROOT / "samples" / "scenarios" / "dns_spoof_race.pcap").exists(), "bundled samples are never deleted"
+
+
+def test_deployment_domain_and_port_come_from_the_platform(monkeypatch):
+    from nettriage.config import LOCAL_HOSTS, load_server_settings
+
+    monkeypatch.setenv("PORT", "9123")
+    monkeypatch.setenv("RAILWAY_PUBLIC_DOMAIN", "nettriage-demo.up.railway.app")
+    monkeypatch.delenv("NETTRIAGE_PORT", raising=False)
+    s = load_server_settings()
+    assert s.port == 9123
+    assert "nettriage-demo.up.railway.app" in s.allowed_hosts and set(LOCAL_HOSTS) <= set(s.allowed_hosts)
+    app = create_app(Limits(), s)
+    with TestClient(app, base_url="https://nettriage-demo.up.railway.app") as c:
+        assert c.get("/api/health").status_code == 200
+        assert c.get("/api/health", headers={"host": "evil.example"}).status_code == 400
+
+
+def test_local_defaults_are_unchanged(monkeypatch):
+    from nettriage.config import LOCAL_HOSTS, load_server_settings
+
+    for name in ("PORT", "NETTRIAGE_PORT", "RAILWAY_PUBLIC_DOMAIN", "NETTRIAGE_ALLOWED_HOSTS", "NETTRIAGE_HOST"):
+        monkeypatch.delenv(name, raising=False)
+    s = load_server_settings()
+    assert (s.host, s.port, s.allowed_hosts) == ("127.0.0.1", 8765, LOCAL_HOSTS)

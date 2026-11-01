@@ -1,0 +1,7 @@
+.git
+.venv
+.claude
+**/__pycache__
+frontend/node_modules
+eval/generated
+backend/tests

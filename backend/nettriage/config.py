@@ -53,16 +53,28 @@ def load_limits() -> Limits:
     )
 
 
+LOCAL_HOSTS = ("127.0.0.1", "localhost", "[::1]", "::1")
+
+
 @dataclass(frozen=True, slots=True)
 class ServerSettings:
     host: str = "127.0.0.1"
     port: int = 8765
     result_ttl_seconds: int = 3600
+    # Host names the server answers to. Anything else is refused, which blocks DNS rebinding.
+    allowed_hosts: tuple[str, ...] = LOCAL_HOSTS
 
 
 def load_server_settings() -> ServerSettings:
+    # A hosting platform (Railway) assigns the port in PORT and publishes its domain in
+    # RAILWAY_PUBLIC_DOMAIN; NETTRIAGE_* settings win when both are set.
+    extra = [h.strip().lower() for h in os.environ.get("NETTRIAGE_ALLOWED_HOSTS", "").split(",") if h.strip()]
+    platform = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip().lower()
+    hosts = LOCAL_HOSTS + tuple(h for h in [*extra, platform] if h and h not in LOCAL_HOSTS)
+    port = _env_int("PORT", 8765, 1, 65535)
     return ServerSettings(
         host=os.environ.get("NETTRIAGE_HOST", "127.0.0.1"),
-        port=_env_int("NETTRIAGE_PORT", 8765, 1, 65535),
+        port=_env_int("NETTRIAGE_PORT", port, 1, 65535),
         result_ttl_seconds=_env_int("NETTRIAGE_RESULT_TTL_MINUTES", 60, 1, 24 * 60) * 60,
+        allowed_hosts=hosts,
     )

@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo-wordmark.svg" alt="NetTriage" width="600"></p>
+
 # NetTriage
 
 **Is your network broken, or is someone breaking it?**
@@ -250,6 +252,20 @@ samples/       scenarios/ (35 labelled), malicious/ (8 hostile), generate/ (simu
 eval/          run_eval.py, results.md
 docs/          research.md, demo-script.md
 ```
+
+## Deploy on Railway
+
+The repository has a `Dockerfile` and `railway.json`, so Railway can build it as is:
+
+1. In Railway, choose **New project → Deploy from GitHub repo** and pick this repository.
+2. Under the service's **Settings → Networking**, click **Generate domain**.
+
+Railway sets `PORT` and `RAILWAY_PUBLIC_DOMAIN`; NetTriage reads both, listens on all interfaces inside the
+container, and still refuses requests for any other host name. Railway checks `/api/health` before routing traffic.
+To allow a custom domain too, set `NETTRIAGE_ALLOWED_HOSTS=your.domain`.
+
+A hosted copy is not offline: captures are uploaded to that server (still deleted right after analysis, and
+reports still expire). For private captures, run NetTriage locally.
 
 ## Configuration
 
