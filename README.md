@@ -45,7 +45,7 @@ export and check) and a CLI that prints the same findings.
 You need **Python 3.11 or newer**. Node is not needed: the built web UI is committed.
 
 ```bash
-git clone <this repository>
+git clone https://github.com/tarun-227/nettriage.git
 cd nettriage
 python -m venv .venv
 ```
