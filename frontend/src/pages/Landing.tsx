@@ -3,7 +3,7 @@
 // simply stack. Every number and byte here comes from that capture or from eval/results.md.
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { api, ApiError } from "../lib/api";
-import { useMedia } from "../lib/live";
+import { useMedia, useTitle } from "../lib/live";
 import { href, navigate } from "../lib/router";
 import { RadarDish } from "../components/Console";
 import { Activity, Bars, CheckCircle, Copy, Cpu, Download, FileIcon, List, ShieldAlert, Wrench } from "../components/icons";
@@ -25,10 +25,44 @@ const FRAME_1115 = "a4 5e 60 02 c2 6b 08 00 27 3e 5a 11 08 06 00 01 08 00 06 04 
 const LIE = "08 00 27 3e 5a 11 c0 a8 01 01";
 const FRAME_TAIL = "a4 5e 60 02 c2 6b c0 a8 01 0c";
 
+// Scroll snapping cancels the browser's own smooth scrolling, so a jump to a chapter is animated
+// here, frame by frame, with snapping and smooth scroll-behavior paused until it lands.
+const SNAP = "y proximity";
+let snapping = false;
+let gliding = 0;
+function glide(top: number) {
+  const root = document.documentElement;
+  const from = window.scrollY;
+  const dist = top - from;
+  cancelAnimationFrame(gliding);
+  if (Math.abs(dist) < 2) return;
+  root.style.scrollSnapType = "none";
+  root.style.scrollBehavior = "auto";
+  const t0 = performance.now();
+  const ms = Math.min(1100, 450 + Math.abs(dist) * 0.12);
+  const step = (t: number) => {
+    const k = Math.min(1, (t - t0) / ms);
+    const eased = k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+    window.scrollTo(0, from + dist * eased);
+    if (k < 1) { gliding = requestAnimationFrame(step); return; }
+    gliding = 0;
+    root.style.scrollBehavior = "";
+    if (snapping) root.style.scrollSnapType = SNAP;
+  };
+  gliding = requestAnimationFrame(step);
+}
+
 export function Landing() {
   const story = useMedia("(min-width: 960px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)");
   const track = useRef<HTMLDivElement>(null);
   const [p, setP] = useState(0);
+  useTitle("NetTriage: broken or breached?");
+
+  // Chapter k sits at k screen-heights down the track.
+  const jump = (k: number) => {
+    const el = track.current;
+    if (el) glide(el.offsetTop + clamp(k, 0, N - 1) * window.innerHeight);
+  };
 
   useEffect(() => {
     if (!story) return;
@@ -41,14 +75,27 @@ export function Landing() {
       setP(max > 0 ? clamp(-el.getBoundingClientRect().top / max) : 0);
     };
     const onScroll = () => { if (!raf) raf = requestAnimationFrame(read); };
+    // The story runs sideways, so the left and right arrow keys step through it too.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || (e.key !== "ArrowRight" && e.key !== "ArrowLeft")) return;
+      const el = track.current;
+      if (!el) return;
+      e.preventDefault();
+      const here = Math.round((window.scrollY - el.offsetTop) / window.innerHeight);
+      glide(el.offsetTop + clamp(here + (e.key === "ArrowRight" ? 1 : -1), 0, N - 1) * window.innerHeight);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
-    document.documentElement.style.scrollSnapType = "y proximity";
+    window.addEventListener("keydown", onKey);
+    snapping = true;
+    document.documentElement.style.scrollSnapType = SNAP;
     read();
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
+      window.removeEventListener("keydown", onKey);
       cancelAnimationFrame(raf);
+      snapping = false;
       document.documentElement.style.scrollSnapType = "";
     };
   }, [story]);
@@ -97,12 +144,15 @@ export function Landing() {
           <div className="flex flex-1 items-center justify-center gap-3.5 font-mono text-[12px] tracking-[0.18em] text-muted">
             <span className="text-neon">0{idx + 1} / 07</span>
             <span className="uppercase text-ink">{CHAPTERS[idx]}</span>
-            <span className="flex gap-1.5">
+            <nav aria-label="Chapters" className="flex">
               {CHAPTERS.map((c, k) => (
-                <span key={c} className={`h-1.5 rounded-full transition-all duration-300 ${k <= idx ? "bg-neon" : "bg-line"}`}
-                  style={{ width: k === idx ? 22 : 6 }} />
+                <button key={c} type="button" onClick={() => jump(k)} aria-label={`Chapter ${k + 1}: ${c}`} aria-current={k === idx ? "step" : undefined}
+                  title={c} className="group flex h-6 items-center px-[3px]">
+                  <span className={`h-1.5 rounded-full transition-all duration-300 group-hover:bg-neon ${k <= idx ? "bg-neon" : "bg-line"}`}
+                    style={{ width: k === idx ? 22 : 6 }} />
+                </button>
               ))}
-            </span>
+            </nav>
           </div>
           <OpenButton />
         </header>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../lib/api";
 import { firstSentence, rootFinding, sortFindings } from "../lib/findings";
 import { bytes, duration, num, offset, pct } from "../lib/format";
+import { useTitle } from "../lib/live";
 import { addRecent, forgetRecent } from "../lib/recent";
 import { href, navigate } from "../lib/router";
 import type { Finding, Job, Report, Verdict } from "../lib/types";
@@ -15,6 +16,9 @@ import { IntegrityTab } from "./Integrity";
 import { TimelineTab } from "./Timeline";
 
 export function ReportView({ job, report, rest }: { job: Job; report: Report; rest: string[] }) {
+  const attacks = report.findings.filter((f) => f.verdict === "attack").length;
+  const faults = report.findings.filter((f) => f.verdict === "fault").length;
+  useTitle(`${report.capture.file_name} · ${attacks ? plural(attacks, "attack") : faults ? plural(faults, "fault") : "clean"} · NetTriage`);
   useEffect(() => {
     addRecent({
       id: job.id, name: report.capture.file_name, at: Date.now(), packets: report.ingest.packets_total, size: job.size,
@@ -61,9 +65,11 @@ function ReportHeader({ job, report }: { job: Job; report: Report }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 sm:px-6">
-        <a href={href("/app")} className="nt-nav inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-muted">‹ Dashboard</a>
+        <a href={href("/app")} aria-label="Back to the dashboard" className="nt-nav inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] text-muted">
+          ‹<span className="hidden sm:inline"> Dashboard</span>
+        </a>
         <span className="hidden h-6 w-px bg-line sm:block" />
-        <div className="min-w-0 flex-1 basis-56">
+        <div className="min-w-0 flex-1 basis-40 sm:basis-56">
           <p className="truncate font-mono text-[13.5px] font-bold text-white" title={`SHA-256 ${report.capture.sha256}`}>{report.capture.file_name}</p>
           <p className="text-[12px] text-muted">
             {bytes(job.size)} · {num(report.ingest.packets_total)} packets · analysed in {duration(report.analysis_seconds)}
@@ -86,11 +92,12 @@ function ReportHeader({ job, report }: { job: Job; report: Report }) {
             </div>
           )}
         </div>
-        <button type="button" onClick={remove} className="nt-btn nt-danger inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface px-3.5 py-2 font-mono text-[13px] font-semibold">
-          <Trash size={15} /> Delete
+        <button type="button" onClick={remove} aria-label="Delete this report now"
+          className="nt-btn nt-danger inline-flex items-center gap-2 rounded-[10px] border border-line bg-surface px-3 py-2 font-mono text-[13px] font-semibold sm:px-3.5">
+          <Trash size={15} /> <span className="hidden sm:inline">Delete</span>
         </button>
-        <a href={href("/app/new")} className="nt-btn nt-primary inline-flex items-center gap-2 rounded-[10px] bg-neon px-3.5 py-2 font-mono text-[13px] font-bold text-on-primary shadow-glow">
-          <Plus size={15} /> New analysis
+        <a href={href("/app/new")} className="nt-btn nt-primary inline-flex items-center gap-2 rounded-[10px] bg-neon px-3 py-2 font-mono text-[13px] font-bold text-on-primary shadow-glow sm:px-3.5">
+          <Plus size={15} /> New<span className="hidden sm:inline"> analysis</span>
         </a>
       </div>
     </header>

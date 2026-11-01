@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { bytes, num } from "../lib/format";
+import { useTitle } from "../lib/live";
 import { href } from "../lib/router";
 import type { Job } from "../lib/types";
 import { ArrowLeft, ShieldAlert } from "../components/icons";
@@ -108,6 +109,7 @@ function Problem({ title, message, detail, security }: { title: string; message:
 }
 
 function Progress({ job }: { job: Job }) {
+  useTitle(`Analysing ${job.file_name} · NetTriage`);
   const p = job.progress ?? {};
   const fraction = p.size ? Math.min(1, (p.bytes ?? 0) / p.size) : 0;
   const reading = job.status === "running" && p.stage === "analyze";

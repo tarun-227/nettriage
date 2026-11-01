@@ -1,7 +1,8 @@
 // The working app: start an analysis (upload or a library sample), and revisit this session's reports.
-import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { api, ApiError } from "../lib/api";
 import { bytes, num } from "../lib/format";
+import { useTitle } from "../lib/live";
 import { forgetRecent, listRecent, type Recent } from "../lib/recent";
 import { href, navigate } from "../lib/router";
 import type { Sample, ServerConfig } from "../lib/types";
@@ -42,6 +43,7 @@ export function Dashboard({ openNew }: { openNew: boolean }) {
   const [error, setError] = useState<Problem | null>(null);
   const [over, setOver] = useState(false);
   const search = useRef<HTMLInputElement>(null);
+  useTitle(modal ? "New analysis · NetTriage" : "Dashboard · NetTriage");
 
   useEffect(() => {
     api.config().then(setConfig).catch(() => setConfig(null));
@@ -67,7 +69,7 @@ export function Dashboard({ openNew }: { openNew: boolean }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement | null)?.closest("input, textarea, [contenteditable]");
+      const typing = e.target instanceof Element && e.target.closest("input, textarea, [contenteditable]");
       if (e.key === "Escape" && modal) closeModal();
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === "/") { e.preventDefault(); search.current?.focus(); }
@@ -337,7 +339,23 @@ function UploadModal({ tab, setTab, onClose, samples, busy, limit, error, onUplo
   const [query, setQuery] = useState("");
   const [over, setOver] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => { closeRef.current?.focus(); }, []);
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    return () => before?.focus();
+  }, []);
+
+  // Keep Tab inside the dialog while it is open.
+  const trapTab = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab") return;
+    const items = [...e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input, a[href], [tabindex]:not([tabindex='-1'])")]
+      .filter((el) => el.offsetParent !== null || el.getClientRects().length > 0);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
 
   const q = query.trim().toLowerCase();
   const list = samples.filter((s) => !q || s.title.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
@@ -352,7 +370,7 @@ function UploadModal({ tab, setTab, onClose, samples, busy, limit, error, onUplo
   return (
     <div className="nt-backdrop fixed inset-0 z-50 flex items-center justify-center bg-bg/70 p-4 backdrop-blur-sm sm:p-6"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="upload-title"
+      <div role="dialog" aria-modal="true" aria-labelledby="upload-title" onKeyDown={trapTab}
         className="nt-modal w-full max-w-[640px] overflow-hidden rounded-[18px] border border-neon/30 bg-surface shadow-[0_40px_80px_-30px_rgb(0_0_0/0.95),0_0_60px_-20px_rgb(var(--neon)/0.35)]">
         <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <h2 id="upload-title" className="text-[17px] font-semibold text-white">New analysis</h2>

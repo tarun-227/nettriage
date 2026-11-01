@@ -231,3 +231,9 @@ body {
 .nt-node:hover { transform: scale(1.06); border-color: rgb(var(--neon));
   box-shadow: 0 0 0 4px rgb(var(--neon) / .12), 0 0 40px -8px rgb(var(--neon) / .7); }
 .nt-caret { animation: dc-caret 1s steps(1) infinite; }
+
+/* Keyboard focus is always visible, in the brand colour. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--neon));
+  outline-offset: 2px;
+}

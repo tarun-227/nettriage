@@ -68,3 +68,12 @@ export function useMedia(query: string) {
   }, [query]);
   return match;
 }
+
+// Sets the browser tab's title while a page is shown.
+export function useTitle(title: string) {
+  useEffect(() => {
+    const before = document.title;
+    document.title = title;
+    return () => { document.title = before; };
+  }, [title]);
+}
