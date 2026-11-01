@@ -23,6 +23,8 @@ from .evidence.pcapwriter import pcap_bytes
 from .ingest.capture import IngestCounters, RawPacket, read_capture
 from .ingest.stream import stream_packets
 from .reasoning.correlate import correlate
+from .reasoning.exposure import blast_radius
+from .reasoning.mitre import tag_techniques
 from .schema import (
     CaptureInfo,
     DeviceName,
@@ -165,7 +167,11 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
                 ctx.rx_by_mac[link.dst] += 1
             if p.dns:
                 if p.dns.qr and len(ctx.dns_answers) < limits.max_dns_transactions:
-                    ctx.dns_answers.update(a.data for a in p.dns.answers if a.rtype in (1, 28))
+                    addrs = [a.data for a in p.dns.answers if a.rtype in (1, 28)]
+                    ctx.dns_answers.update(addrs)
+                    if p.dns.qname and not p.dns.multicast:
+                        for a in addrs:
+                            ctx.dns_names.setdefault(a, p.dns.qname)
                 elif not p.dns.qr and not p.dns.multicast and p.dns.qname:
                     if p.dns.qname in names or len(names) < 5000:
                         names[p.dns.qname] += 1
@@ -210,6 +216,9 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
     alerts = [f for f in findings if f.verdict != Verdict.BENIGN]
     ruled_out = [f for f in findings if f.verdict == Verdict.BENIGN]
     incidents = correlate(alerts)
+    tag_techniques(alerts)
+    arp = next(d for d in detectors if isinstance(d, ArpDetector))
+    exposures = blast_radius(alerts, arp.relay_flows, ctx.dns_names)
 
     evidence = _collect_evidence(path, limits, alerts + ruled_out)
     for f in alerts + ruled_out:
@@ -245,6 +254,7 @@ def analyze(path: Path, display_name: str, limits: Limits, progress: ProgressFn 
         findings=alerts,
         ruled_out=ruled_out,
         incidents=incidents,
+        exposures=exposures,
         hosts=len(ips),
         devices=len(devices),
         protocols=dict(protocols.most_common()),

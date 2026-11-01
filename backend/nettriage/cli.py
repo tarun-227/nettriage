@@ -50,7 +50,29 @@ def main(argv: list[str] | None = None) -> int:
     an.add_argument("--json", action="store_true", help="print the full report as JSON")
     an.add_argument("--all", action="store_true", help="also list what was checked and ruled out")
     an.add_argument("--evidence-dir", type=Path, help="write one evidence pcap per finding here")
+    pr = sub.add_parser("proof", help="analyse a capture and write a privacy-safe, tamper-evident Proof Pack")
+    pr.add_argument("capture", type=Path)
+    pr.add_argument("--out", type=Path, help="where to write the zip (default: next to the capture)")
+    ve = sub.add_parser("verify", help="check that a Proof Pack has not been changed")
+    ve.add_argument("pack", type=Path)
+    ve.add_argument("--root", help="the root hash you were given with the pack")
     args = parser.parse_args(argv)
+
+    if args.command == "verify":
+        from .evidence.proofpack import MAX_TOTAL_BYTES, verify_proof_pack
+
+        if not args.pack.is_file() or args.pack.stat().st_size > MAX_TOTAL_BYTES:
+            print(f"error: {args.pack} is not a file of a sensible size", file=sys.stderr)
+            return 2
+        v = verify_proof_pack(args.pack.read_bytes(), args.root)
+        print(strip_ansi(f"{'VERIFIED' if v.ok else 'NOT VERIFIED'}  root {v.root or '-'}  ({v.files} files)"))
+        if v.source_capture_sha256:
+            print(f"  from capture sha256 {v.source_capture_sha256}, packed {v.created}")
+        if not args.root and v.ok:
+            print("  Compare this root with the one you were given; a pack can be rebuilt, the root you hold can't.")
+        for p in v.problems:
+            print(strip_ansi(f"  - {p}"))
+        return 0 if v.ok else 1
 
     if args.command == "serve":
         import uvicorn
@@ -75,6 +97,17 @@ def main(argv: list[str] | None = None) -> int:
     except CaptureFormatError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
+    if args.command == "proof":
+        from .evidence.proofpack import build_proof_pack
+
+        pack = build_proof_pack(result.report, result.evidence)
+        out: Path = args.out or path.with_name(f"{path.stem}.proof.zip")
+        out.write_bytes(pack.data)
+        print(f"Wrote {out} ({len(pack.data):,} bytes, {len(pack.files)} files)")
+        print(f"Root hash: {pack.root}")
+        print("Share the root hash separately from the zip. Anyone can check the pack with:")
+        print(f"  nettriage verify {out.name} --root {pack.root}")
+        return 0
     if args.json:
         print(json.dumps(result.report.model_dump(mode="json"), indent=2))
     else:

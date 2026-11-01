@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException, Request, Response
@@ -12,6 +13,7 @@ from fastapi.responses import StreamingResponse
 
 from . import __version__
 from .config import Limits
+from .evidence.proofpack import build_proof_pack, verify_proof_pack
 from .ingest.validate import check_extension, sniff
 from .jobs import JobManager
 from .security.sanitize import display_safe
@@ -19,6 +21,9 @@ from .security.sanitize import display_safe
 ID = r"^[0-9a-f]{32}$"
 FINDING_ID = r"^[a-z_]+-[0-9a-f]{10}$"
 SAMPLE_NAME = r"^[a-z0-9_.]{1,80}$"
+PACK_ID = r"^[0-9a-f]{32}$"
+MAX_PACKS_PER_JOB = 3
+MAX_PACK_UPLOAD = 50 * 1024 * 1024
 
 
 HOSTILE_SAMPLES = {
@@ -147,6 +152,44 @@ def build_router(jobs: JobManager, limits: Limits) -> APIRouter:
             raise HTTPException(404, "No evidence for that finding.")
         return Response(data, media_type="application/vnd.tcpdump.pcap",
                         headers={"Content-Disposition": f'attachment; filename="evidence-{finding_id}.pcap"'})
+
+    @r.post("/analyses/{job_id}/proof-pack", status_code=201)
+    def make_proof_pack(job_id: str = _path(ID)) -> dict:
+        job = _job(jobs, job_id)
+        if job.report is None:
+            raise HTTPException(409, "The analysis has not finished.")
+        pack = build_proof_pack(job.report, job.evidence)
+        token = secrets.token_hex(16)
+        while len(job.proof_packs) >= MAX_PACKS_PER_JOB:
+            job.proof_packs.pop(next(iter(job.proof_packs)))
+        job.proof_packs[token] = (pack.data, pack.root)
+        return {"token": token, "root": pack.root, "bytes": len(pack.data), "files": pack.files}
+
+    @r.get("/analyses/{job_id}/proof-pack/{token}")
+    def get_proof_pack(job_id: str = _path(ID), token: str = _path(PACK_ID)) -> Response:
+        job = _job(jobs, job_id)
+        found = job.proof_packs.get(token)
+        if found is None:
+            raise HTTPException(404, "No such Proof Pack. Build a new one.")
+        data, root = found
+        return Response(data, media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="nettriage-proof-{root[:12]}.zip"'})
+
+    @r.post("/proof-packs/verify")
+    async def verify_pack(request: Request, x_expected_root: str = Header(default="", max_length=64)) -> dict:
+        declared = request.headers.get("content-length")
+        if declared and declared.isdigit() and int(declared) > MAX_PACK_UPLOAD:
+            raise HTTPException(413, "That file is too large to be a Proof Pack.")
+        body = bytearray()
+        async for chunk in request.stream():
+            body += chunk
+            if len(body) > MAX_PACK_UPLOAD:
+                raise HTTPException(413, "That file is too large to be a Proof Pack.")
+        if x_expected_root and not all(c in "0123456789abcdefABCDEF" for c in x_expected_root):
+            raise HTTPException(400, "A root hash is 64 hexadecimal characters.")
+        v = verify_proof_pack(bytes(body), x_expected_root or None)
+        return {"ok": v.ok, "root": v.root, "problems": [display_safe(p, 200) for p in v.problems], "files": v.files,
+                "source_capture_sha256": v.source_capture_sha256, "created": v.created}
 
     @r.get("/analyses/{job_id}/report")
     def report(job_id: str = _path(ID)) -> Response:

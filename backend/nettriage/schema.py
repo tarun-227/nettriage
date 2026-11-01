@@ -59,6 +59,12 @@ class KeyPacket(BaseModel):
     summary: str
 
 
+class Technique(BaseModel):
+    id: str
+    name: str
+    url: str
+
+
 class Finding(BaseModel):
     id: str
     analyzer: str
@@ -80,6 +86,8 @@ class Finding(BaseModel):
     key_packets: list[KeyPacket]
     wireshark_filter: str
     has_evidence_pcap: bool = False
+    # MITRE ATT&CK techniques an attack finding matches, e.g. T1557.002 ARP Cache Poisoning.
+    techniques: list[Technique] = Field(default_factory=list)
 
 
 class SkipExample(BaseModel):
@@ -139,6 +147,41 @@ class Incident(BaseModel):
     entities: list[Entity] = Field(default_factory=list)
 
 
+class ExposedFlow(BaseModel):
+    """One conversation that passed through an interceptor, and what that exposed."""
+
+    victim: str
+    peer: str
+    name: str | None = None
+    protocol: str
+    port: int | None = None
+    service: str
+    encrypted: bool | None
+    exposed: str
+    packets: int
+    first_ts: float
+    last_ts: float
+    frames: list[int] = Field(default_factory=list)
+
+
+class Exposure(BaseModel):
+    """The blast radius of an interception: who was intercepted, for how long, and what the attacker could see."""
+
+    finding_id: str
+    attacker: str
+    attacker_ips: list[str] = Field(default_factory=list)
+    victims: list[str] = Field(default_factory=list)
+    start: float
+    end: float
+    relayed_packets: int
+    flows: list[ExposedFlow] = Field(default_factory=list)
+    hijacked_names: list[str] = Field(default_factory=list)
+    readable: int = 0
+    metadata_only: int = 0
+    summary: str
+    fix_steps: list[str] = Field(default_factory=list)
+
+
 class NameCount(BaseModel):
     name: str
     count: int
@@ -160,6 +203,7 @@ class Report(BaseModel):
     findings: list[Finding] = Field(default_factory=list)
     ruled_out: list[Finding] = Field(default_factory=list)
     incidents: list[Incident] = Field(default_factory=list)
+    exposures: list[Exposure] = Field(default_factory=list)
     hosts: int = 0
     devices: int = 0
     protocols: dict[str, int] = Field(default_factory=dict)

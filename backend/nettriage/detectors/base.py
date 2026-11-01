@@ -60,6 +60,8 @@ class Context:
     quality: list[QualityWarning] = field(default_factory=list)
     # Addresses returned in DNS answers: things people actually tried to reach.
     dns_answers: set[str] = field(default_factory=set)
+    # Address -> the name a client looked up to get it (first answer wins), to name relayed connections.
+    dns_names: dict[str, str] = field(default_factory=dict)
     # Sources the port-scan detector flagged; other detectors leave their traffic out.
     scanners: set[str] = field(default_factory=set)
     # (host, host) pairs whose retransmissions the MTU detector explains; TCP health leaves them out.

@@ -53,6 +53,8 @@ class Job:
     progress: dict = field(default_factory=dict)
     report: Report | None = None
     evidence: dict[str, bytes] = field(default_factory=dict)
+    # Proof Packs built for this report: token -> (zip bytes, root hash). Each has its own random key.
+    proof_packs: dict[str, tuple[bytes, str]] = field(default_factory=dict)
     upload_deleted_at: float | None = None
     finished: threading.Event = field(default_factory=threading.Event)
 

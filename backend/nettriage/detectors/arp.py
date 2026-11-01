@@ -31,6 +31,7 @@ VIRTUAL_MAC_PREFIXES = ("00:00:5e:00:01:", "00:00:5e:00:02:", "00:00:0c:07:ac:",
 REDUNDANCY_UDP_PORTS = {1985, 2029, 3222}  # HSRPv1, HSRPv2, GLBP
 SOLICIT_WINDOW = 3.0
 RELAY_WINDOW = 0.05
+MAX_RELAY_FLOWS = 2000
 MAX_CLAIMS_PER_IP = 5000
 MAX_KEY_PACKETS = 40
 SWEEP_TARGETS = 20
@@ -267,6 +268,8 @@ class ArpDetector(Detector):
         self.originated: dict[str, Counter] = defaultdict(Counter)
         self.recent: OrderedDict = OrderedDict()
         self.relays: dict[str, list[tuple[int, int]]] = defaultdict(list)
+        # Relaying MAC -> (src, dst, proto, sport, dport) -> [packets, first ts, last ts, frames], for the blast radius.
+        self.relay_flows: dict[str, dict[tuple, list]] = defaultdict(dict)
         self.redundancy: dict[str, str] = {}
         self.leases: dict[str, list[tuple[str, int]]] = defaultdict(list)
         self.kp: dict[str, list[KeyPacket]] = defaultdict(list)
@@ -324,6 +327,16 @@ class ArpDetector(Detector):
                    and 0 <= p.ts - prev[3] <= RELAY_WINDOW and ip.ttl == prev[2] - 1)
         if relayed:
             self.relays[link.src].append((prev[4], p.frame))
+            flows = self.relay_flows[link.src]
+            fk = (ip.src, ip.dst, ip.proto, extra[0], extra[1])
+            st = flows.get(fk)
+            if st is None and len(flows) < MAX_RELAY_FLOWS:
+                st = flows[fk] = [0, p.ts, p.ts, []]
+            if st is not None:
+                st[0] += 1
+                st[2] = p.ts
+                if len(st[3]) < 6:
+                    st[3].append(p.frame)
             self._key(("relay", link.src), p, f"relayed by {link.src}, TTL {prev[2]} -> {ip.ttl}", cap=6)
         elif ip.proto in (PROTO_TCP, PROTO_UDP) or ip.proto == 1:
             self.originated[ip.src][link.src] += 1
