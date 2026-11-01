@@ -77,6 +77,9 @@ class JobManager:
     # --- uploads --------------------------------------------------------
 
     def new_upload_path(self) -> Path:
+        # Recreated if it vanished: another instance's startup sweep or an OS temp cleaner can remove a folder
+        # that has been idle for a while.
+        self.upload_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
         # Never derived from the client's file name, so no path traversal is possible.
         return self.upload_dir / f"{uuid.uuid4().hex}.capture"
 

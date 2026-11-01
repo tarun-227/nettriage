@@ -90,6 +90,15 @@ def test_full_round_trip_and_upload_is_deleted(client):
     assert client.get(f"/api/analyses/{job_id}").status_code == 404
 
 
+def test_upload_survives_its_temp_folder_being_swept(client):
+    # A second `nettriage serve` sweeps idle upload folders at startup, including this instance's.
+    upload_dir = client.app.state.jobs.upload_dir
+    upload_dir.rmdir()
+    r = client.post("/api/analyses", content=SAMPLE.read_bytes(), headers={"x-filename": "after_sweep.pcap"})
+    assert r.status_code == 202
+    assert wait_done(client, r.json()["id"])["status"] == "done"
+
+
 def test_malformed_ids_are_rejected(client):
     assert client.get("/api/analyses/not-an-id").status_code == 400
     assert client.get("/api/analyses/" + "0" * 32).status_code == 404
