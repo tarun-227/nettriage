@@ -3,7 +3,7 @@ import { href } from "../lib/router";
 import type { Job, Report } from "../lib/types";
 import { TimelineChart } from "../components/TimelineChart";
 import { VerdictChip, verdictBg } from "../components/ui";
-import { sortFindings } from "./Report";
+import { sortFindings } from "../lib/findings";
 
 // One lane per finding, laid out on the same time axis as the traffic chart.
 export function TimelineTab({ job, report }: { job: Job; report: Report }) {

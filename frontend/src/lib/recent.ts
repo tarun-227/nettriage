@@ -6,6 +6,8 @@ export interface Recent {
   at: number;
   attacks: number;
   faults: number;
+  packets?: number;
+  size?: number;
 }
 
 const KEY = "nettriage.recent";

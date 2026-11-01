@@ -55,3 +55,16 @@ export function useTyped(lines: readonly string[], speed = 22, pause = 420, rest
   }, [line, chars, lines, speed, pause, restart]);
   return { line, chars };
 }
+
+// True while the media query matches, for layouts that change shape rather than just size.
+export function useMedia(query: string) {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [query]);
+  return match;
+}

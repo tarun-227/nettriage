@@ -99,7 +99,7 @@ function Problem({ title, message, detail, security }: { title: string; message:
             <h1 className="font-mono text-[17px] font-bold text-white">{title}</h1>
             <p className="mt-2 text-[15px]">{message}</p>
             {detail && <p className="mt-3 text-muted">{detail}</p>}
-            <a href={href("/")} className="btn mt-5"><ArrowLeft size={14} /> Analyse another file</a>
+            <a href={href("/app")} className="btn mt-5"><ArrowLeft size={14} /> Analyse another file</a>
           </div>
         </div>
       </div>

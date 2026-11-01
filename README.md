@@ -67,7 +67,7 @@ cd backend
 python -m nettriage serve
 ```
 
-Open **http://127.0.0.1:8765**. Press **S** to analyse a random sample, or **U** to upload your own capture.
+Open **http://127.0.0.1:8765**, then **Open dashboard**: drop a capture, or run one from the sample library. Press **U** to upload and **/** to search.
 
 From the command line (still inside `backend/`):
 

@@ -156,3 +156,78 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* --- Hover and story motion (redesign) ------------------------------------ */
+
+.nt-lift { transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, border-color .3s; }
+.nt-lift:hover { transform: translateY(-4px); border-color: rgb(var(--neon) / .45);
+  box-shadow: 0 22px 44px -22px rgb(0 0 0 / .95), 0 0 32px -12px rgb(var(--neon) / .4); }
+.nt-lift-attack:hover { border-color: rgb(var(--attack) / .5);
+  box-shadow: 0 22px 44px -22px rgb(0 0 0 / .95), 0 0 32px -12px rgb(var(--attack) / .45); }
+.nt-btn { position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s, border-color .2s, color .2s, background-color .2s; }
+.nt-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.nt-btn::after { content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%);
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / .38) 50%, transparent 70%); transition: transform .7s; }
+.nt-btn:hover:not(:disabled)::after { transform: translateX(120%); }
+.nt-primary:hover:not(:disabled) { box-shadow: 0 0 0 4px rgb(var(--neon) / .15), 0 0 32px -4px rgb(var(--neon) / .75); }
+.nt-ghost:hover:not(:disabled) { border-color: rgb(var(--neon) / .6); color: rgb(var(--neon)); background-color: rgb(var(--neon) / .06); }
+.nt-danger:hover { border-color: rgb(var(--attack) / .6); color: rgb(var(--attack)); background-color: rgb(var(--attack) / .06); }
+.nt-arrow { display: inline-block; transition: transform .2s; }
+.nt-btn:hover .nt-arrow, .nt-lift:hover .nt-arrow, .nt-row:hover .nt-arrow, .nt-toggle:hover .nt-arrow { transform: translateX(4px); }
+.nt-row { transition: background-color .2s, box-shadow .2s; }
+.nt-row:hover { background-color: rgb(var(--raised)); box-shadow: inset 3px 0 0 rgb(var(--neon)); }
+.nt-reveal { opacity: 0; transform: translateX(-6px); transition: opacity .2s, transform .2s; }
+.nt-lift:hover .nt-reveal, .nt-row:hover .nt-reveal, .nt-row:focus-within .nt-reveal { opacity: 1; transform: none; }
+.nt-nav { transition: color .2s, background-color .2s; }
+.nt-nav:hover { color: rgb(var(--ink)); background-color: rgb(var(--neon) / .06); }
+.nt-toggle { transition: color .2s; }
+.nt-toggle:hover { color: rgb(var(--neon)); }
+.nt-drop {
+  background-image:
+    linear-gradient(90deg, rgb(var(--neon) / .55) 50%, transparent 0), linear-gradient(90deg, rgb(var(--neon) / .55) 50%, transparent 0),
+    linear-gradient(0deg, rgb(var(--neon) / .55) 50%, transparent 0), linear-gradient(0deg, rgb(var(--neon) / .55) 50%, transparent 0);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 14px 1px, 14px 1px, 1px 14px, 1px 14px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  transition: background-color .3s, box-shadow .3s;
+}
+.nt-drop:hover, .nt-drop.is-over { animation: nt-ants .9s linear infinite; background-color: rgb(var(--neon) / .05);
+  box-shadow: 0 0 50px -20px rgb(var(--neon) / .6); }
+@keyframes nt-ants { to { background-position: 14px 0, -14px 100%, 0 -14px, 100% 14px; } }
+.nt-backdrop { animation: nt-fadein .25s ease both; }
+@keyframes nt-fadein { from { opacity: 0; } }
+.nt-modal { animation: nt-pop .38s cubic-bezier(.2,.9,.25,1.12) both; }
+@keyframes nt-pop { from { opacity: 0; transform: translateY(18px) scale(.96); } }
+.nt-menu { animation: nt-dropdown .22s cubic-bezier(.2,.9,.25,1.1) both; transform-origin: top right; }
+@keyframes nt-dropdown { from { opacity: 0; transform: translateY(-6px) scale(.97); } }
+.nt-open { animation: nt-reveal-in .3s ease both; }
+@keyframes nt-reveal-in { from { opacity: .2; transform: translateY(-4px); } }
+.nt-ring { animation: nt-ring 1.2s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes nt-ring { from { stroke-dashoffset: 113; } }
+.nt-bar { transition: background-color .15s, transform .15s; transform-origin: bottom; }
+.nt-bar:hover { background-color: rgb(var(--neon)); transform: scaleY(1.05); }
+
+/* Landing story */
+.nt-flow { stroke-dasharray: 6 10; animation: nt-flow 1.1s linear infinite; }
+.nt-flow-fast { stroke-dasharray: 4 8; animation: nt-flow .5s linear infinite; }
+@keyframes nt-flow { to { stroke-dashoffset: -32; } }
+.nt-glitch { position: relative; display: inline-block; animation: nt-glitch 2.6s steps(1) infinite; }
+@keyframes nt-glitch {
+  0%, 86%, 100% { text-shadow: 0 0 18px rgb(var(--attack) / .6); transform: none; }
+  87% { text-shadow: -6px 0 rgb(var(--review)), 6px 0 rgb(var(--attack)); transform: translateX(3px) skewX(-8deg); }
+  89% { text-shadow: 5px 0 rgb(var(--neon)), -5px 0 rgb(var(--attack)); transform: translateX(-4px); }
+  91% { text-shadow: -3px 0 rgb(var(--review)), 3px 0 rgb(var(--amber)); transform: translateX(2px) skewX(6deg); }
+  93% { text-shadow: 0 0 18px rgb(var(--attack) / .6); transform: none; }
+}
+.nt-hint { display: inline-block; animation: nt-hint 1.4s ease-in-out infinite; }
+@keyframes nt-hint { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
+.nt-lost { animation: nt-lost 2.4s ease-in-out infinite; }
+@keyframes nt-lost { 0%, 40% { opacity: 1; transform: none; } 60%, 100% { opacity: .08; transform: translateY(14px); } }
+.nt-liar { animation: nt-liar 1.2s ease-in-out infinite; }
+@keyframes nt-liar { 0%, 100% { box-shadow: 0 0 0 0 rgb(var(--attack) / .7); } 50% { box-shadow: 0 0 0 10px rgb(var(--attack) / 0); } }
+.nt-float { animation: nt-float 5s ease-in-out infinite; }
+@keyframes nt-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+.nt-node { transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, border-color .3s; }
+.nt-node:hover { transform: scale(1.06); border-color: rgb(var(--neon));
+  box-shadow: 0 0 0 4px rgb(var(--neon) / .12), 0 0 40px -8px rgb(var(--neon) / .7); }
+.nt-caret { animation: dc-caret 1s steps(1) infinite; }
