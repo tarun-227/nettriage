@@ -190,3 +190,37 @@ websites over IPv4, depending on the MTU of the constraining link.
 The signature is a handshake that completes, then a transfer that stalls: full-size segments with the
 don't-fragment bit are retransmitted repeatedly while small segments get through. Usually no ICMP "fragmentation
 needed" message is seen, because a firewall dropped it.
+
+How we use it (`backend/nettriage/detectors/mtu.py`):
+- **Black hole (fault).** For each TCP direction we track full-size segments (over 1000 bytes of payload) and
+  small ones separately. The rules weigh: full-size segments resent again and again and never acknowledged; small
+  segments on the *same* connections acknowledged (congestion would drop those too, so this argues against plain
+  loss); the don't-fragment bit set; no ICMP "packet too big" anywhere in the capture; connections that fall back
+  to small segments after the failures (what Windows' black-hole detection does); and several devices showing the
+  same pattern. The competing explanation is ordinary packet loss.
+- **ICMP present (benign or fault).** When a router *does* send "fragmentation needed" or "packet too big", the
+  message alone is not a problem: a smaller link (a VPN or PPPoE uplink) is normal. We check what the senders did
+  next. If they shrank their segments below the reported MTU and the data was acknowledged, Path MTU Discovery
+  is working, and the finding goes to "checked and ruled out". If they kept sending oversized segments, it is a
+  fault.
+
+## Incident correlation (stretch)
+
+Separate findings often share one cause. Security operations tools call this alert correlation. The common
+approaches are to group alerts by shared attributes, by time, or with attack-scenario templates; see
+F. Valeur, G. Vigna, C. Kruegel, R. Kemmerer, *A Comprehensive Approach to Intrusion Detection Alert
+Correlation*, IEEE TDSC 2004 ([DOI](https://doi.org/10.1109/TDSC.2004.21)).
+
+We use the two simplest of those ideas, because each is easy to explain to a user and easy to check
+(`backend/nettriage/reasoning/correlate.py`):
+- **Same offending device.** Attack findings whose offender (the ARP claimant, the DNS forger, the scanner, the
+  rogue DHCP server) is the same MAC or IP become one incident. The root finding is picked by a fixed order: ARP
+  spoofing or a rogue DHCP server comes first, because it is what makes a DNS forgery possible.
+- **Outage and its symptoms.** An internet outage and the DNS failures that overlap it in time become one fault
+  incident. Users then see one cause to fix, not two.
+
+Faults and attacks are never linked to each other. An attacker does not explain a broken uplink, and linking them
+would hide one of them.
+
+The simulator labels which findings must be linked, and `eval/run_eval.py` checks both directions: expected links
+that were not made, and links made where none was expected.
