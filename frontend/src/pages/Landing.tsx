@@ -66,7 +66,7 @@ function useSample() {
 }
 
 export function Landing() {
-  const story = useMedia("(min-width: 960px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)");
+  const story = useMedia("(min-width: 900px) and (min-height: 460px) and (prefers-reduced-motion: no-preference)");
   const track = useRef<HTMLDivElement>(null);
   const [p, setP] = useState(0);
   useTitle("NetTriage: broken or breached?");

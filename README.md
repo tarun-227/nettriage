@@ -10,7 +10,24 @@ it. It runs entirely on your computer, and every byte of the capture is parsed b
 
 Built solo for the IIITDM Kancheepuram 24-hour Cybersecurity Hackathon, Network Track (31 Oct to 1 Nov 2026).
 
+**Live demo:** https://web-production-cca62.up.railway.app/ (hosted on Railway; use the bundled samples, never upload private captures to a public host)
+
 **Demo video:** _link added at submission_
+
+**Try it in 10 seconds:** open the live demo, press **Try a sample**, or upload
+[`samples/scenarios/mitm_dns_combo.pcap`](samples/scenarios/mitm_dns_combo.pcap) (an ARP man-in-the-middle that also forges DNS answers).
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Landing page](docs/screenshots/01-landing.png) | ![Fault vs attack](docs/screenshots/03-proof.png) |
+| **Landing:** scroll sideways through what it does | **Proof:** frame numbers, filter, evidence packets |
+| ![Dashboard](docs/screenshots/04-dashboard.png) | ![Upload](docs/screenshots/05-upload.png) |
+| **Dashboard:** recent analyses and a sample library | **Upload:** drop a capture or pick a sample |
+
+![Analysis of an ARP man-in-the-middle with forged DNS](docs/screenshots/06-analysis.png)
+**Analysis:** the verdict, what to do, and the findings behind it.
 
 ---
 
