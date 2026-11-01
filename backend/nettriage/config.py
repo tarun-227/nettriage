@@ -72,8 +72,10 @@ def load_server_settings() -> ServerSettings:
     # take the service down. Everywhere else NETTRIAGE_* settings win.
     extra = [h.strip().lower() for h in os.environ.get("NETTRIAGE_ALLOWED_HOSTS", "").split(",") if h.strip()]
     platform = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip().lower()
-    hosts = LOCAL_HOSTS + tuple(h for h in [*extra, platform] if h and h not in LOCAL_HOSTS)
     on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_ENVIRONMENT_NAME"))
+    # Railway's health checker sends Host: healthcheck.railway.app.
+    probe = "healthcheck.railway.app" if on_railway else ""
+    hosts = LOCAL_HOSTS + tuple(h for h in [*extra, platform, probe] if h and h not in LOCAL_HOSTS)
     if on_railway and os.environ.get("PORT"):
         host, port = "0.0.0.0", _env_int("PORT", 8765, 1, 65535)  # noqa: S104 - container on a platform
     else:

@@ -165,3 +165,5 @@ def test_railway_ignores_copied_local_host_and_port(monkeypatch):
     monkeypatch.setenv("NETTRIAGE_PORT", "8765")
     s = load_server_settings()
     assert (s.host, s.port) == ("0.0.0.0", 8080)  # noqa: S104
+    with TestClient(create_app(Limits(), s), base_url="http://healthcheck.railway.app") as c:
+        assert c.get("/api/health").status_code == 200
