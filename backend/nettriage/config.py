@@ -67,14 +67,21 @@ class ServerSettings:
 
 def load_server_settings() -> ServerSettings:
     # A hosting platform (Railway) assigns the port in PORT and publishes its domain in
-    # RAILWAY_PUBLIC_DOMAIN; NETTRIAGE_* settings win when both are set.
+    # RAILWAY_PUBLIC_DOMAIN. There the platform wins: inside its container only all interfaces on
+    # its port are reachable, so a copied local setting such as NETTRIAGE_HOST=127.0.0.1 must not
+    # take the service down. Everywhere else NETTRIAGE_* settings win.
     extra = [h.strip().lower() for h in os.environ.get("NETTRIAGE_ALLOWED_HOSTS", "").split(",") if h.strip()]
     platform = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").strip().lower()
     hosts = LOCAL_HOSTS + tuple(h for h in [*extra, platform] if h and h not in LOCAL_HOSTS)
-    port = _env_int("PORT", 8765, 1, 65535)
+    on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_ENVIRONMENT_NAME"))
+    if on_railway and os.environ.get("PORT"):
+        host, port = "0.0.0.0", _env_int("PORT", 8765, 1, 65535)  # noqa: S104 - container on a platform
+    else:
+        host = os.environ.get("NETTRIAGE_HOST", "127.0.0.1")
+        port = _env_int("NETTRIAGE_PORT", _env_int("PORT", 8765, 1, 65535), 1, 65535)
     return ServerSettings(
-        host=os.environ.get("NETTRIAGE_HOST", "127.0.0.1"),
-        port=_env_int("NETTRIAGE_PORT", port, 1, 65535),
+        host=host,
+        port=port,
         result_ttl_seconds=_env_int("NETTRIAGE_RESULT_TTL_MINUTES", 60, 1, 24 * 60) * 60,
         allowed_hosts=hosts,
     )

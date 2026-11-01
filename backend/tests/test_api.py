@@ -149,7 +149,19 @@ def test_deployment_domain_and_port_come_from_the_platform(monkeypatch):
 def test_local_defaults_are_unchanged(monkeypatch):
     from nettriage.config import LOCAL_HOSTS, load_server_settings
 
-    for name in ("PORT", "NETTRIAGE_PORT", "RAILWAY_PUBLIC_DOMAIN", "NETTRIAGE_ALLOWED_HOSTS", "NETTRIAGE_HOST"):
+    for name in ("PORT", "NETTRIAGE_PORT", "RAILWAY_PUBLIC_DOMAIN", "NETTRIAGE_ALLOWED_HOSTS", "NETTRIAGE_HOST",
+                 "RAILWAY_ENVIRONMENT", "RAILWAY_ENVIRONMENT_NAME"):
         monkeypatch.delenv(name, raising=False)
     s = load_server_settings()
     assert (s.host, s.port, s.allowed_hosts) == ("127.0.0.1", 8765, LOCAL_HOSTS)
+
+
+def test_railway_ignores_copied_local_host_and_port(monkeypatch):
+    from nettriage.config import load_server_settings
+
+    monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
+    monkeypatch.setenv("PORT", "8080")
+    monkeypatch.setenv("NETTRIAGE_HOST", "127.0.0.1")
+    monkeypatch.setenv("NETTRIAGE_PORT", "8765")
+    s = load_server_settings()
+    assert (s.host, s.port) == ("0.0.0.0", 8080)  # noqa: S104
