@@ -30,3 +30,6 @@ samples/generated/
 
 # Local tool configuration
 .claude/
+
+# Proof Packs written by `nettriage proof`
+*.proof.zip

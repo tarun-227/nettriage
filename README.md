@@ -31,11 +31,14 @@ Built solo for the IIITDM Kancheepuram 24-hour Cybersecurity Hackathon, Network 
 | **Proof** | Wireshark-matching frame numbers, a ready-made display filter, and a downloadable `evidence.pcap` for every finding. |
 | **Plain language** | A one-paragraph explanation, the likely cause, and a fix checklist, plus a technical view. |
 | **Connected incidents** | Findings with one root cause are linked: an ARP spoofer that also forges DNS is one incident, with one device to unplug. |
+| **What the attacker could see** | When an interception is proven, every conversation that passed through the attacker is listed with what it exposed: plain HTTP or FTP readable in full, HTTPS showing only the server, DNS names visible and hijacked. The fix steps name the passwords to change. Nothing is read out of the payloads. |
+| **Proof Pack** | One click exports evidence you can send to an ISP or IT team without exposing your network: every address is replaced with a keyed, prefix-preserving pseudonym, packet contents are removed, and a SHA-256 root hash shows any change. `nettriage verify` or the dashboard checks a pack offline. |
+| **ATT&CK labels** | Attack findings carry their MITRE ATT&CK technique, for example T1557.002 ARP Cache Poisoning. |
 | **Honest about the capture** | One-directional or lossy captures are reported as a capture problem, not blamed on the network. |
 | **Safe with hostile files** | Built to be handed broken and booby-trapped captures. See [Security](#security). |
 
-There is a web UI (upload, live progress, report, findings, timeline, integrity) and a CLI that prints the same
-findings.
+There is a web UI (landing page, dashboard with a sample library, upload, live progress, analysis, Proof Pack
+export and check) and a CLI that prints the same findings.
 
 ## Quick start
 
@@ -78,6 +81,13 @@ python -m nettriage analyze ../samples/scenarios/mitm_dns_combo.pcap
 Add `--all` to also list what was ruled out, `--json` for the full report, or `--evidence-dir out/` to write one
 evidence capture per finding.
 
+Make a Proof Pack and check one:
+
+```bash
+python -m nettriage proof ../samples/scenarios/mitm_dns_combo.pcap
+python -m nettriage verify ../samples/scenarios/mitm_dns_combo.proof.zip --root <root hash it printed>
+```
+
 No capture of your own? `samples/scenarios/` has 35 labelled ones and `samples/malicious/` has 8 hostile files.
 They all appear as one-click samples in the UI.
 
@@ -98,6 +108,10 @@ it, are examples.
    ruled out".
 5. **Correlation.** Attacks by the same device, and an outage with the DNS failures it causes, become one
    incident with a root finding to fix first.
+6. **Blast radius.** Every packet the ARP detector proves was relayed (same IP ID, TTL lowered by one) also
+   records its conversation. Conversations are named with the DNS answers the victim received and classed by
+   service: encrypted (server visible, contents private), plaintext with logins (everything readable) or DNS
+   (names visible, answers forgeable).
 
 The detectors adapt published methods. Each one is described in [docs/research.md](docs/research.md), with
 citations and what we changed:
@@ -110,6 +124,8 @@ citations and what we changed:
 | ARP spoofing | Cross-layer ARP checks, plus our own **forwarding proof**: the same packet seen going to the attacker and coming back out with TTL - 1 |
 | MTU black holes | Path MTU Discovery failure signatures (Luckie & Stasiewicz, IMC 2010) |
 | Incidents | Attribute- and time-based alert correlation (Valeur et al., IEEE TDSC 2004) |
+| Blast radius | Our relay proof, scoped the way MITRE ATT&CK T1557 (Adversary-in-the-Middle) says to: by what crossed the intercepted path |
+| Proof Pack pseudonyms | Crypto-PAn prefix-preserving anonymisation (Xu, Fan, Ammar and Moon, 2002), as in the IETF ipcrypt draft's "pfx" mode, built on HMAC-SHA256 |
 
 ## What it detects
 
@@ -162,6 +178,9 @@ A capture is untrusted input from the network, possibly crafted by an attacker. 
 | Phoning home | No outbound connections, no CDN fonts or scripts, no telemetry | `test_analysis_opens_no_network_connections` fails if any socket opens |
 | Secrets | None needed. Every setting is optional (see [.env.example](.env.example)) | CI runs gitleaks |
 | Supply chain | Few runtime dependencies, pinned in [backend/requirements.txt](backend/requirements.txt); frontend versions pinned exactly | CI runs bandit, pip-audit and gitleaks |
+| Shared evidence exposing the network | Proof Pack: every IP and MAC gets a keyed, prefix-preserving pseudonym (random key, discarded; private stays private, public stays public); packets cut after the transport header; transport checksums zeroed, since they would let someone test guesses of the real addresses; file name, lookup history and hostnames left out | `test_proof_pack_leaks_no_real_address` checks the report text and the packet bytes |
+| Tampered evidence | SHA-256 of every file in a manifest and one root hash over them; the root travels separately and `nettriage verify` or the dashboard check recomputes it | `test_any_change_is_caught` |
+| A hostile zip handed to the checker | Entry count, total size, path and compression-ratio limits enforced before anything is read | `test_hostile_zips_are_refused` |
 
 The **Integrity** tab of every report shows the SHA-256, the checks that ran, the limits in force, every skipped
 packet with its reason, and confirmation that the upload was deleted. The hostile files are described in
@@ -219,8 +238,8 @@ backend/nettriage/
   ingest/      file validation, bounds-checked reader, streaming pcap and pcapng readers
   decode/      protocol decoders and text escaping
   detectors/   arp, portscan, tcp, dns, dhcp, mtu
-  reasoning/   differential diagnosis, finding builder, incident correlation
-  evidence/    key-packet descriptions, evidence.pcap writer
+  reasoning/   differential diagnosis, finding builder, incident correlation, blast radius, ATT&CK labels
+  evidence/    key-packet descriptions, evidence.pcap writer, Proof Pack (pseudonyms, manifest, verifier)
   security/    display-safe text, HTTP security headers
   engine.py    one streaming pass over the capture
   api.py  jobs.py  main.py  cli.py
@@ -229,7 +248,7 @@ backend/tests/ decoders vs. Scapy, hostile input and fuzzing, detectors, accurac
 frontend/      React + TypeScript source of the web UI
 samples/       scenarios/ (35 labelled), malicious/ (8 hostile), generate/ (simulator)
 eval/          run_eval.py, results.md
-docs/          research.md
+docs/          research.md, demo-script.md
 ```
 
 ## Configuration

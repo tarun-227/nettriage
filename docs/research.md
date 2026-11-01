@@ -224,3 +224,40 @@ would hide one of them.
 
 The simulator labels which findings must be linked, and `eval/run_eval.py` checks both directions: expected links
 that were not made, and links made where none was expected.
+
+## Blast radius (what an interceptor could see)
+
+MITRE ATT&CK's guidance for Adversary-in-the-Middle ([T1557](https://attack.mitre.org/techniques/T1557/),
+[T1557.002](https://attack.mitre.org/techniques/T1557/002/)) is to scope an interception by what crossed the
+intercepted path. Packet tools that go further usually extract the secrets themselves (NetworkMiner pulls passwords
+out of captures). We do the scoping without extracting anything (`backend/nettriage/reasoning/exposure.py`):
+
+- The ARP detector already proves relaying: the same packet (same addresses and IP ID) arrives at the attacker's
+  MAC and leaves it with the TTL lowered by one. Each relayed packet now also records its conversation.
+- Conversations are named with the DNS answers the victim received, so a row reads "www.iiitdm.ac.in, HTTPS",
+  not just an address.
+- Each is classed by its service port: encrypted (HTTPS, SSH, IMAPS...: which server and when, contents private),
+  plaintext that carries logins (HTTP, FTP, Telnet, POP3, IMAP, SMTP...: everything readable), DNS (every name
+  visible, answers forgeable), or unknown.
+- Names whose DNS answers the same device forged are listed, and the fix steps follow from the classes: which
+  passwords to change, which caches to clear.
+
+## Proof Pack: shareable, pseudonymized, tamper-evident evidence
+
+Online pcap analysers make you upload the capture itself, which carries every address and payload on the network.
+A Proof Pack goes the other way (`backend/nettriage/evidence/proofpack.py`):
+
+- **Pseudonyms.** IPs use the prefix-preserving construction of Crypto-PAn (J. Xu, J. Fan, M. Ammar, S. Moon,
+  *Prefix-preserving IP address anonymization*, ICNP 2002 / Computer Networks 2004): output bit *i* is input bit
+  *i* XOR a keyed function of the first *i* input bits, so two addresses that share an *n*-bit prefix still do.
+  The same idea is the "pfx" mode of the IETF draft
+  [draft-denis-ipcrypt](https://datatracker.ietf.org/doc/draft-denis-ipcrypt/). We use HMAC-SHA256 as the keyed
+  function (standard library, no AES dependency), keep the range prefix of private and special ranges, and
+  cycle-walk so public addresses stay public. The key is random per pack and discarded. MACs keep their vendor
+  prefix.
+- **No contents.** Packets are cut after the transport header. Transport checksums are zeroed, because a 16-bit
+  checksum computed over the real addresses would let someone test guesses of them.
+- **Tamper evidence.** A manifest lists the SHA-256 of every file and a root hash over those lines. The root is
+  meant to travel separately (a ticket, a chat): anyone can recompute it, but nobody can change a file without
+  changing it. The verifier treats a pack as hostile input: entry count, total size, path and compression-ratio
+  limits come before anything is read.
