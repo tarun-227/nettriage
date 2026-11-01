@@ -20,7 +20,7 @@ Every number on screen comes from the real app and the bundled samples. Nothing 
 
 | Time | Screen | Say (short) |
 |---|---|---|
-| 0:00–0:25 | Landing page. Scroll slowly through the seven chapters: network, fault vs attack, the impostor (frame 1115's bytes, the lie in red), the evidence bars, the ATTACK stamp. | "A broken network and an attacked one look the same from outside. This is a real capture of an attack. Watch NetTriage catch the lie." |
+| 0:00–0:25 | Landing page. Scroll (or press →) through the eight sections: what it's for (the bytes decode into a verdict), what it catches, fault vs attack (the confidence bars race), proof, what the attacker could see, safe by design, measured. | "A broken network and an attacked one look the same from outside. NetTriage reads the capture, tells you which it is and how sure it is, and shows the packets that prove it." |
 | 0:25–0:35 | Wi-Fi icon off. Click **Open dashboard**. | "It runs entirely on this laptop. Nothing leaves it." |
 | 0:35–1:05 | Dashboard, Library, **Man-in-the-middle with forged DNS**. Progress screen ticks through its checks. Verdict: **2 attacks found**. | "One click. In about a second: two attacks, 100% sure, and one sentence on what's happening." |
 | 1:05–1:35 | **What to do** checklist. Then the two finding cards: open **Why we think so** on the first (260 packets relayed with TTL − 1; ruled out: router failover, duplicate IP, swapped card). Point at the ATT&CK chip. | "It doesn't just flag. It weighs every explanation and shows why the others lose. The relayed packets are proof of interception, not a guess." |
