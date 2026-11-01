@@ -1,4 +1,4 @@
-// Side-by-side picker for the five design concepts (plus the current Navy & Gold design).
+// Side-by-side picker for the five early design concepts. The live app mixes Radar and Terminal.
 import { href } from "../lib/router";
 import { AuroraConcept } from "./Aurora";
 import { EditorialConcept } from "./Editorial";
@@ -25,7 +25,7 @@ export function DesignGallery() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="text-[40px] font-black tracking-tight">5 design concepts</h1>
-          <a href={href("/")} className="rounded-xl bg-[#1B2A4A] px-4 py-2 text-[13px] font-semibold text-white">Current design (Navy & Gold)</a>
+          <a href={href("/")} className="rounded-xl bg-[#1B2A4A] px-4 py-2 text-[13px] font-semibold text-white">Current design</a>
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {CONCEPTS.map((c, i) => (

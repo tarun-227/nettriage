@@ -7,7 +7,7 @@ import type { Finding, Job, Report, Verdict } from "../lib/types";
 import {
   Activity, Bars, CheckCircle, ChevronDown, ChevronRight, Download, Fingerprint, Info, List, Plus, Trash, Wrench,
 } from "../components/icons";
-import { VerdictSeal } from "../components/Scene3D";
+import { RadarDish } from "../components/Console";
 import { TimelineChart } from "../components/TimelineChart";
 import { Tilt } from "../components/Tilt";
 import { TopBar } from "../components/TopBar";
@@ -49,25 +49,25 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
   return (
     <div className="flex min-h-full flex-col">
       <TopBar>
-        <span className="hidden h-6 w-px bg-white/20 md:block" />
+        <span className="hidden h-5 w-px bg-line md:block" />
         <div className="hidden min-w-0 md:block">
-          <p className="truncate text-[13px] font-semibold">{report.capture.file_name}</p>
-          <p className="mono truncate text-[11px] text-white/55" title={`SHA-256 ${report.capture.sha256}`}>
+          <p className="truncate text-[12.5px] font-semibold text-ink">{report.capture.file_name}</p>
+          <p className="truncate text-[10.5px] text-muted" title={`SHA-256 ${report.capture.sha256}`}>
             sha256 {report.capture.sha256.slice(0, 16)}...
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <a className="btn btn-ghost-light px-2.5" href={api.reportUrl(job.id)} download title="Download the full report as JSON">
+          <a className="btn px-2.5" href={api.reportUrl(job.id)} download title="Download the full report as JSON">
             <Download size={15} /><span className="hidden xl:inline">Export</span>
           </a>
-          <button type="button" className="btn btn-ghost-light px-2.5" onClick={remove} title="Forget this report now">
+          <button type="button" className="btn btn-danger px-2.5" onClick={remove} title="Forget this report now">
             <Trash size={15} /><span className="hidden xl:inline">Delete</span>
           </button>
-          <a className="btn btn-gold" href={href("/")}><Plus size={15} /><span className="hidden sm:inline">New analysis</span></a>
+          <a className="btn btn-primary" href={href("/")}><Plus size={15} /><span className="hidden sm:inline">New analysis</span></a>
         </div>
       </TopBar>
       <div className="mx-auto flex w-full max-w-[1400px] flex-1">
-        <nav className="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 border-r border-line p-4 md:block" aria-label="Report">
+        <nav className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 border-r border-line p-4 md:block" aria-label="Report">
           <a href={href("/")} className="mb-4 flex items-center gap-1.5 text-[12.5px] text-muted hover:text-primary">
             <ChevronRight size={13} className="rotate-180" /> Home
           </a>
@@ -75,12 +75,12 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
             {TABS.map(({ key, label, Icon }) => (
               <li key={key}>
                 <a href={href(`${base}/${key}`)}
-                  className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors ${tab === key
-                    ? "bg-navy text-white shadow-card" : "text-muted hover:bg-raised hover:text-ink"}`}>
-                  <Icon size={16} className={tab === key ? "text-gold" : ""} />
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 font-mono text-[13px] font-semibold transition-colors ${tab === key
+                    ? "bg-neon/10 text-neon shadow-[inset_2px_0_0_rgb(var(--neon))]" : "text-muted hover:bg-raised hover:text-ink"}`}>
+                  <Icon size={16} />
                   {label}
                   {key === "findings" && alerts.length > 0 && (
-                    <span className={`ml-auto rounded-md px-1.5 text-[11px] tabular-nums ${tab === key ? "bg-gold text-navy" : "bg-raised"}`}>
+                    <span className={`ml-auto rounded-md px-1.5 text-[11px] tabular-nums ${tab === key ? "bg-neon text-on-primary" : "bg-raised"}`}>
                       {alerts.length}
                     </span>
                   )}
@@ -88,7 +88,7 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
               </li>
             ))}
           </ul>
-          <div className="mt-6 space-y-2.5 rounded-xl border border-line bg-surface p-3 text-[12.5px]">
+          <div className="mt-6 space-y-2.5 rounded-lg border border-line bg-surface p-3 font-mono text-[12px]">
             <Stat label="Attacks" value={counts.attack} cls="text-attack" />
             <Stat label="Faults" value={counts.fault} cls="text-fault" />
             <Stat label="Needs review" value={counts.review} cls="text-review" />
@@ -97,9 +97,10 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
         </nav>
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-8">
           <div className="mb-4 flex gap-1 overflow-x-auto md:hidden">
+            <a href={href("/")} className="shrink-0 rounded px-2 py-1.5 font-mono text-[12.5px] text-muted" aria-label="Home">&larr;</a>
             {TABS.map(({ key, label }) => (
               <a key={key} href={href(`${base}/${key}`)}
-                className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold ${tab === key ? "bg-navy text-white" : "text-muted"}`}>{label}</a>
+                className={`shrink-0 rounded px-3 py-1.5 font-mono text-[12.5px] font-semibold ${tab === key ? "bg-neon/15 text-neon" : "text-muted"}`}>{label}</a>
             ))}
           </div>
           {tab === "overview" && <Overview job={job} report={report} />}
@@ -133,6 +134,15 @@ function headline(report: Report): { text: string; tone: "attack" | "fault" | "o
   return { text: "No problems found", tone: "ok" };
 }
 
+const HERO_TONE = { attack: "attack", fault: "fault", ok: "neon" } as const;
+const HERO_TEXT = { attack: "text-attack", fault: "text-fault", ok: "text-neon" };
+const HERO_BORDER = { attack: "border-attack/50", fault: "border-fault/50", ok: "border-neon/40" };
+const HERO_BLIPS = {
+  attack: [{ x: 66, y: 32, d: 0.3, tone: "attack" as const }, { x: 30, y: 60, d: 1.5, tone: "attack" as const }],
+  fault: [{ x: 64, y: 36, d: 0.6, tone: "fault" as const }, { x: 34, y: 64, d: 1.8, tone: "fault" as const }],
+  ok: [{ x: 60, y: 34, d: 0.8 }, { x: 32, y: 62, d: 2.0 }],
+};
+
 function Overview({ job, report }: { job: Job; report: Report }) {
   const h = headline(report);
   const start = report.capture.first_ts;
@@ -140,38 +150,39 @@ function Overview({ job, report }: { job: Job; report: Report }) {
   const incidents = report.incidents ?? [];
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="hero-bg relative overflow-hidden rounded-3xl p-6 text-white shadow-lift sm:p-8">
-        <div className="flex items-start gap-5">
-          <VerdictSeal tone={h.tone} />
+      <div className={`console-bg relative overflow-hidden rounded-xl border p-5 shadow-lift sm:p-7 ${HERO_BORDER[h.tone]}`}>
+        <div className="flex items-center gap-5 sm:gap-7">
+          <RadarDish tone={HERO_TONE[h.tone]} active blips={HERO_BLIPS[h.tone]} className="w-24 shrink-0 sm:w-32" />
           <div className="min-w-0">
-            <p className="eyebrow">Diagnosis</p>
-            <h1 className="display mt-1 text-[28px] font-semibold leading-tight sm:text-[32px]">{h.text}</h1>
-            <p className="mt-2 text-[14px] text-white/75">
-              {num(report.ingest.packets_total)} packets over {duration(report.capture.duration)} from {report.devices} devices,
-              analysed in {duration(report.analysis_seconds)}.
-              {report.ruled_out.length > 0 && ` ${report.ruled_out.length} suspicious-looking thing${report.ruled_out.length === 1 ? " was" : "s were"} checked and ruled out.`}
+            <p className={`label ${HERO_TEXT[h.tone]}`}>Diagnosis</p>
+            <h1 className={`display glow-text mt-1 text-[24px] font-bold leading-tight sm:text-[30px] ${HERO_TEXT[h.tone]}`}>{h.text}</h1>
+            <p className="mt-2 font-mono text-[12.5px] text-muted">
+              {num(report.ingest.packets_total)} packets · {duration(report.capture.duration)} · {report.devices} devices ·
+              analysed in {duration(report.analysis_seconds)}
+              {report.ruled_out.length > 0 && <> · <span className="text-benign">{report.ruled_out.length} ruled out</span></>}
             </p>
           </div>
         </div>
+        <div className="scanlines pointer-events-none absolute inset-0 opacity-40" />
       </div>
 
       {top && (
         <a href={href(`/a/${job.id}/findings/${top.id}`)}
-          className="card group flex flex-col gap-3 border-l-4 border-l-gold p-5 transition-shadow hover:shadow-lift sm:flex-row sm:items-center">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-primary"><Wrench size={19} /></span>
+          className="card group flex flex-col gap-3 border-l-4 border-l-neon p-5 transition-shadow hover:shadow-lift sm:flex-row sm:items-center">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neon/10 text-neon"><Wrench size={19} /></span>
           <span className="min-w-0 flex-1">
             <span className="label">Start here</span>
-            <span className="mt-0.5 block text-[15px] font-semibold">{top.title}</span>
+            <span className="mt-0.5 block text-[15px] font-semibold text-white">{top.title}</span>
             <span className="mt-0.5 block text-[13.5px] text-muted">First step: {top.fix_steps[0]}</span>
           </span>
-          <span className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-primary">
+          <span className="flex shrink-0 items-center gap-1 font-mono text-[12.5px] font-semibold text-neon">
             Why and how <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" />
           </span>
         </a>
       )}
 
       {report.quality.map((q) => (
-        <div key={q.code} className="flex items-start gap-3 rounded-2xl border border-review/40 bg-review/5 p-4">
+        <div key={q.code} className="flex items-start gap-3 rounded-xl border border-review/40 bg-review/5 p-4">
           <Info size={18} className="mt-0.5 shrink-0 text-review" />
           <div>
             <p className="font-semibold">{q.message}</p>
@@ -215,7 +226,7 @@ function Overview({ job, report }: { job: Job; report: Report }) {
         <Kpi label="Devices" value={String(report.devices)} sub={`${report.hosts} IP addresses`} />
         <Kpi label="Attacks" value={String(report.findings.filter((f) => f.verdict === "attack").length)} tone="text-attack" />
         <Kpi label="Faults" value={String(report.findings.filter((f) => f.verdict === "fault").length)} tone="text-fault" />
-        <Kpi label="Ruled out" value={String(report.ruled_out.length)} tone="text-benign" sub="checked, not a problem" />
+        <Kpi label="Ruled out" value={String(report.ruled_out.length)} tone="text-benign" sub="not a problem" />
       </div>
 
       <div className="card p-5">
@@ -237,10 +248,10 @@ function Overview({ job, report }: { job: Job; report: Report }) {
 
 function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <Tilt className="rounded-2xl" max={6}>
+    <Tilt className="rounded-xl" max={6}>
       <div className="card h-full px-4 py-3.5">
         <p className="label">{label}</p>
-        <p className={`display mt-1 text-[26px] font-semibold tabular-nums leading-tight ${tone && value !== "0" ? tone : ""}`}>{value}</p>
+        <p className={`display mt-1 truncate text-[clamp(18px,1.7vw,24px)] font-bold tabular-nums leading-tight ${tone && value !== "0" ? `${tone} glow-text` : "text-white"}`}>{value}</p>
         {sub && <p className="truncate text-[12px] text-muted">{sub}</p>}
       </div>
     </Tilt>
@@ -317,7 +328,7 @@ function ProtocolMix({ report }: { report: Report }) {
   const entries = Object.entries(report.protocols);
   const total = entries.reduce((s, [, n]) => s + n, 0);
   if (!total) return null;
-  const colours = ["bg-navy", "bg-gold", "bg-review", "bg-benign", "bg-fault", "bg-muted", "bg-attack/70", "bg-ink/30"];
+  const colours = ["bg-neon", "bg-amber", "bg-review", "bg-attack/70", "bg-benign/60", "bg-muted", "bg-neon/40", "bg-ink/40"];
   return (
     <div className="card h-fit p-5">
       <p className="label mb-3">Protocol mix</p>
@@ -393,16 +404,16 @@ function FindingsTab({ job, report, selected }: { job: Job; report: Report; sele
   }
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
-      <div className="card h-fit overflow-hidden xl:sticky xl:top-[5.5rem] xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto">
+      <div className="card h-fit overflow-hidden xl:sticky xl:top-[5rem] xl:max-h-[calc(100vh-6.5rem)] xl:overflow-y-auto">
         <div className="flex flex-wrap gap-1 border-b border-line p-2.5">
           {FILTERS.map((fl) => {
             const n = fl.key === "all" ? all.length : all.filter((f) => f.verdict === fl.key).length;
             if (fl.key !== "all" && !n) return null;
             return (
               <button key={fl.key} type="button" onClick={() => setFilter(fl.key)} aria-pressed={filter === fl.key}
-                className={`rounded-lg px-2.5 py-1 text-[12.5px] font-semibold transition-colors ${filter === fl.key
-                  ? "bg-navy text-white" : "text-muted hover:bg-raised hover:text-ink"}`}>
-                {fl.label} <span className={filter === fl.key ? "text-gold" : ""}>{n}</span>
+                className={`rounded px-2.5 py-1 font-mono text-[12px] font-semibold transition-colors ${filter === fl.key
+                  ? "bg-neon/15 text-neon" : "text-muted hover:bg-raised hover:text-ink"}`}>
+                {fl.label} <span className="opacity-60">{n}</span>
               </button>
             );
           })}
@@ -411,7 +422,7 @@ function FindingsTab({ job, report, selected }: { job: Job; report: Report; sele
           {visible.map((f) => (
             <li key={f.id}>
               <a href={href(`/a/${job.id}/findings/${f.id}`)}
-                className={`block px-4 py-3 transition-colors hover:bg-raised/60 ${current?.id === f.id ? "bg-raised shadow-[inset_3px_0_0_rgb(var(--gold))]" : ""}`}>
+                className={`block px-4 py-3 transition-colors hover:bg-raised/60 ${current?.id === f.id ? "bg-raised shadow-[inset_3px_0_0_rgb(var(--neon))]" : ""}`}>
                 <div className="flex items-center justify-between gap-2">
                   <VerdictChip verdict={f.verdict} size="sm" />
                   <ConfidenceBar value={f.confidence} verdict={f.verdict} width="w-12" />

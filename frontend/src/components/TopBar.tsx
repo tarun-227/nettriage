@@ -1,14 +1,13 @@
 import type { ReactNode } from "react";
+import { useNow } from "../lib/live";
 import { href, navigate } from "../lib/router";
-import { useTheme } from "../lib/theme";
-import { Logo, Moon, Sun, WifiOff } from "./icons";
+import { WifiOff } from "./icons";
 
 const SECTIONS = [
-  { id: "how", label: "How it works" },
-  { id: "detects", label: "What it finds" },
   { id: "samples", label: "Samples" },
+  { id: "detects", label: "Catches" },
   { id: "security", label: "Security" },
-  { id: "capture", label: "Make a capture" },
+  { id: "capture", label: "Capture" },
 ];
 
 export function scrollToSection(id: string) {
@@ -21,24 +20,20 @@ export function scrollToSection(id: string) {
 }
 
 export function TopBar({ children, home = false }: { children?: ReactNode; home?: boolean }) {
-  const [theme, toggle] = useTheme();
+  const now = useNow();
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-navy text-white shadow-[0_1px_0_rgba(201,162,39,0.25)]">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-5 px-4 sm:px-6">
-        <a href={href("/")} className="flex shrink-0 items-center gap-2.5" onClick={() => window.scrollTo({ top: 0 })}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-gold ring-1 ring-gold/40">
-            <Logo size={20} />
-          </span>
-          <span className="leading-tight">
-            <span className="display block text-[18px] font-semibold">NetTriage</span>
-            <span className="hidden text-[10.5px] uppercase tracking-[0.18em] text-white/60 sm:block">Network diagnosis</span>
-          </span>
+    <header className="sticky top-0 z-30 border-b border-line bg-bg/90 font-mono backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-5 px-4 sm:px-6">
+        <a href={href("/")} className="flex shrink-0 items-center gap-2.5 text-[13px] font-bold tracking-[0.22em] text-neon"
+          onClick={() => window.scrollTo({ top: 0 })}>
+          <span className="h-2 w-2 animate-pulse rounded-full bg-neon shadow-glow" />
+          NETTRIAGE
         </a>
         {home ? (
           <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex" aria-label="Sections">
             {SECTIONS.map((s) => (
               <button key={s.id} type="button" onClick={() => scrollToSection(s.id)}
-                className="rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/75 transition-colors hover:bg-white/10 hover:text-white">
+                className="rounded px-3 py-1.5 text-[12px] uppercase tracking-[0.16em] text-muted transition-colors hover:bg-neon/10 hover:text-neon">
                 {s.label}
               </button>
             ))}
@@ -46,18 +41,16 @@ export function TopBar({ children, home = false }: { children?: ReactNode; home?
         ) : (
           <div className="flex min-w-0 flex-1 items-center gap-3">{children}</div>
         )}
-        <span className="hidden items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-2.5 py-1 text-[12px]
-          font-medium text-[#f0d88a] md:inline-flex" title="NetTriage makes no outbound connections">
-          <WifiOff size={13} /> Offline
+        <span className="hidden text-[12px] tabular-nums tracking-[0.12em] text-muted xl:inline" title="Local time in UTC">
+          {now.toISOString().slice(11, 19)} UTC
         </span>
-        <button type="button" onClick={toggle}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 text-white/80 transition-colors hover:border-gold/60 hover:text-gold"
-          aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}>
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        <span className="hidden items-center gap-1.5 rounded border border-neon/40 px-2 py-0.5 text-[11px] tracking-[0.16em] text-neon md:inline-flex"
+          title="NetTriage makes no outbound connections">
+          <WifiOff size={12} /> OFFLINE
+        </span>
         {home && (
-          <button type="button" className="btn btn-gold hidden sm:inline-flex" onClick={() => scrollToSection("analyse")}>
-            Analyse a capture
+          <button type="button" className="btn btn-primary hidden sm:inline-flex" onClick={() => scrollToSection("analyse")}>
+            Analyse <kbd className="kbd text-[10px]">U</kbd>
           </button>
         )}
       </div>

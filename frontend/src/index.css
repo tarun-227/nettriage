@@ -2,41 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Classic Navy & Gold. Tokens are RGB triplets so Tailwind can apply opacity. */
-:root,
-:root[data-theme="light"] {
-  --bg: 248 247 244;        /* #F8F7F4 off-white */
-  --surface: 255 255 255;
-  --raised: 242 240 234;
-  --line: 226 222 212;
-  --ink: 43 43 43;          /* #2B2B2B charcoal */
-  --muted: 104 103 98;
-  --navy: 27 42 74;         /* #1B2A4A */
-  --gold: 201 162 39;       /* #C9A227 */
-  --primary: 27 42 74;      /* text-safe interactive colour */
-  --on-primary: 255 255 255;
-  --attack: 178 34 34;
-  --fault: 196 92 14;
-  --review: 46 104 170;
-  --benign: 38 118 84;
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  --bg: 12 19 35;
-  --surface: 19 30 54;
-  --raised: 26 40 70;
-  --line: 40 56 90;
-  --ink: 236 233 226;
-  --muted: 160 166 182;
-  --navy: 27 42 74;
-  --gold: 201 162 39;
-  --primary: 226 192 88;    /* gold, lightened so text stays readable on navy */
-  --on-primary: 27 42 74;
-  --attack: 240 113 106;
-  --fault: 243 156 82;
-  --review: 127 176 238;
-  --benign: 92 199 149;
+/* Ops console: radar green on near-black, with terminal amber. One dark theme.
+   Tokens are RGB triplets so Tailwind can apply opacity. */
+:root {
+  --bg: 5 8 10;             /* #05080A */
+  --surface: 10 17 20;      /* #0A1114 */
+  --raised: 17 28 32;       /* #111C20 */
+  --line: 33 52 55;         /* #213437 */
+  --ink: 216 236 226;       /* #D8ECE2 */
+  --muted: 128 156 144;     /* #809C90 */
+  --neon: 43 255 136;       /* #2BFF88 radar green */
+  --amber: 255 176 0;       /* #FFB000 terminal amber */
+  --primary: 43 255 136;
+  --on-primary: 5 8 10;
+  --attack: 255 84 112;     /* #FF5470 */
+  --fault: 255 176 0;
+  --review: 96 200 255;     /* #60C8FF */
+  --benign: 150 226 180;    /* #96E2B4 softer green, so "ruled out" never reads as a button */
   color-scheme: dark;
 }
 
@@ -56,45 +38,45 @@ body {
 }
 
 ::selection {
-  background: rgb(var(--gold) / 0.35);
+  background: rgb(var(--neon) / 0.3);
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-surface shadow-card;
+    @apply rounded-xl border border-line bg-surface shadow-card;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3.5 py-2
-      text-[13px] font-semibold text-ink transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-card
-      focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 disabled:cursor-not-allowed disabled:opacity-50
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface px-3.5 py-2
+      font-mono text-[12.5px] font-semibold text-ink transition-all hover:-translate-y-px hover:border-neon/50 hover:text-neon
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-neon/70 disabled:cursor-not-allowed disabled:opacity-50
       disabled:hover:translate-y-0;
   }
   .btn-primary {
-    @apply border-transparent bg-primary text-on-primary hover:border-transparent hover:bg-primary/90;
-  }
-  .btn-gold {
-    @apply border-transparent bg-gold text-navy shadow-gold hover:border-transparent hover:bg-gold/90;
-  }
-  .btn-ghost-light {
-    @apply border-white/30 bg-white/5 text-white hover:border-white/60 hover:bg-white/10;
+    @apply border-transparent bg-neon text-on-primary shadow-glow hover:border-transparent hover:bg-neon/90 hover:text-on-primary;
   }
   .btn-danger {
     @apply hover:border-attack/50 hover:text-attack;
   }
   .label {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-muted;
   }
   .eyebrow {
-    @apply text-[12px] font-semibold uppercase tracking-[0.16em] text-gold;
+    @apply font-mono text-[12px] font-semibold uppercase tracking-[0.3em] text-neon;
   }
   .mono {
     @apply font-mono text-[12.5px];
   }
   .link {
-    @apply font-medium text-primary underline-offset-2 hover:underline;
+    @apply font-medium text-neon underline-offset-2 hover:underline;
   }
   .display {
-    @apply font-serif tracking-tight;
+    @apply font-mono tracking-tight;
+  }
+  .kbd {
+    @apply inline-flex min-w-[1.9em] items-center justify-center rounded border border-current px-1.5 font-mono font-bold leading-[1.6];
+  }
+  .glow-text {
+    text-shadow: 0 0 10px currentColor;
   }
 }
 
@@ -115,28 +97,29 @@ body {
   will-change: transform;
 }
 .tilt:hover {
-  box-shadow: 0 18px 40px -18px rgb(27 42 74 / 0.45);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.9), 0 0 30px -12px rgb(43 255 136 / 0.35);
 }
 .tilt-glare {
-  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(255 255 255 / 0.35), transparent 55%);
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgb(43 255 136 / 0.12), transparent 55%);
 }
 
-.hero-bg {
+/* Console backdrop: a faint radar grid with a green glow from above. */
+.console-bg {
   background:
-    radial-gradient(1200px 500px at 85% -10%, rgb(201 162 39 / 0.18), transparent 60%),
-    radial-gradient(800px 400px at -10% 110%, rgb(255 255 255 / 0.07), transparent 60%),
-    linear-gradient(160deg, #1b2a4a 0%, #15223d 55%, #101a30 100%);
+    radial-gradient(900px 420px at 70% -10%, rgb(43 255 136 / 0.12), transparent 65%),
+    radial-gradient(700px 360px at 0% 110%, rgb(255 176 0 / 0.07), transparent 65%),
+    linear-gradient(rgb(43 255 136 / 0.045) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, rgb(43 255 136 / 0.045) 1px, transparent 1px) 0 0 / 44px 44px,
+    rgb(var(--bg));
 }
 
-.grid-floor {
-  background-color: #1f3157;
-  background-image:
-    linear-gradient(rgb(201 162 39 / 0.22) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(201 162 39 / 0.22) 1px, transparent 1px);
-  background-size: 40px 40px;
+/* Thin CRT scanlines, laid over a panel. */
+.scanlines {
+  background: repeating-linear-gradient(rgb(0 0 0 / 0.28) 0 1px, transparent 1px 3px);
+  animation: dc-scan 0.5s linear infinite;
 }
 
-/* --- Design concepts (#/designs) ------------------------------------------ */
+/* --- Live and 3D animation ----------------------------------------------- */
 
 @keyframes dc-spin { to { transform: rotate(360deg); } }
 @keyframes dc-blip { 0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
@@ -151,6 +134,7 @@ body {
 @keyframes dc-siren { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
 @keyframes dc-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes dc-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ok-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 
 .dc-face { backface-visibility: hidden; }
 .dc-scanlines {

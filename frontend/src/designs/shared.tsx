@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { api, ApiError } from "../lib/api";
 import { href, navigate } from "../lib/router";
+export { useCountUp, useCycle, useNow } from "../lib/live";
 import type { Sample } from "../lib/types";
 
 export const FEATURED = ["arp_spoof_mitm.pcap", "dns_spoof_race.pcap", "uplink_outage.pcap", "port_scan_syn.pcap",
@@ -49,42 +50,6 @@ export function useAnalyse() {
       onDrop: (e: DragEvent) => { e.preventDefault(); setOver(false); onFile(e.dataTransfer.files?.[0]); },
     },
   };
-}
-
-// Animates from 0 to `target` once, for live-feeling numbers.
-export function useCountUp(target: number, ms = 1400) {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / ms);
-      setV(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, ms]);
-  return v;
-}
-
-export function useNow(every = 1000) {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), every);
-    return () => clearInterval(id);
-  }, [every]);
-  return now;
-}
-
-export function useCycle(length: number, every = 1800) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (!length) return;
-    const id = setInterval(() => setI((x) => (x + 1) % length), every);
-    return () => clearInterval(id);
-  }, [length, every]);
-  return i;
 }
 
 export function ErrorToast({ text, onClose, className }: { text: string | null; onClose: () => void; className: string }) {

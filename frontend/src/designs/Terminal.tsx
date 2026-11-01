@@ -1,5 +1,6 @@
 // Concept 4 · Amber terminal: a keyboard-first tool for power users. Amber on dark, a tilted 3D CRT, a live log.
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useTyped } from "../lib/live";
 import { ErrorToast, GalleryLink, useAnalyse } from "./shared";
 
 const LOG = [
@@ -11,27 +12,11 @@ const LOG = [
   { t: "  evidence.pcap written · 78 frames", c: "text-[#B98A2E]" },
 ];
 
-function useTyped() {
-  const [line, setLine] = useState(0);
-  const [chars, setChars] = useState(0);
-  useEffect(() => {
-    if (line >= LOG.length) {
-      const id = setTimeout(() => { setLine(0); setChars(0); }, 2600);
-      return () => clearTimeout(id);
-    }
-    const full = LOG[line].t.length;
-    const id = setTimeout(() => {
-      if (chars < full) setChars(chars + 1);
-      else { setLine(line + 1); setChars(0); }
-    }, chars < full ? 22 : 420);
-    return () => clearTimeout(id);
-  }, [line, chars]);
-  return { line, chars };
-}
+const LINES = LOG.map((l) => l.t);
 
 export function TerminalConcept() {
   const a = useAnalyse();
-  const { line, chars } = useTyped();
+  const { line, chars } = useTyped(LINES);
   const { pickFile, randomSample } = a;
 
   useEffect(() => {

@@ -3,7 +3,6 @@ const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
-  darkMode: ["selector", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -13,9 +12,9 @@ export default {
         line: token("line"),
         ink: token("ink"),
         muted: token("muted"),
-        // Brand: navy and muted gold. "primary" is the text-safe interactive colour for the theme.
-        navy: token("navy"),
-        gold: token("gold"),
+        // Ops console: radar green is the brand and interactive colour, terminal amber the second accent.
+        neon: token("neon"),
+        amber: token("amber"),
         primary: token("primary"),
         "on-primary": token("on-primary"),
         accent: token("primary"),
@@ -31,9 +30,9 @@ export default {
         mono: ["ui-monospace", "Cascadia Code", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       boxShadow: {
-        card: "0 1px 2px rgb(27 42 74 / 0.06), 0 2px 8px rgb(27 42 74 / 0.05)",
-        lift: "0 10px 30px -10px rgb(27 42 74 / 0.35), 0 4px 10px -4px rgb(27 42 74 / 0.2)",
-        gold: "0 8px 24px -8px rgb(201 162 39 / 0.55)",
+        card: "0 1px 0 rgb(0 0 0 / 0.5)",
+        lift: "0 24px 50px -24px rgb(0 0 0 / 0.9), 0 0 40px -16px rgb(43 255 136 / 0.25)",
+        glow: "0 0 24px -6px rgb(43 255 136 / 0.6)",
       },
       keyframes: {
         sway: { "0%": { transform: "rotateX(58deg) rotateZ(-34deg)" }, "100%": { transform: "rotateX(56deg) rotateZ(-44deg)" } },

@@ -17,8 +17,8 @@ export function FindingDetail({ job, report, finding: f }: { job: Job; report: R
   return (
     <article className="min-w-0 space-y-4">
       {incident && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-gold/50 bg-gold/10 p-4 sm:flex-row sm:items-center">
-          <span className="label shrink-0 text-primary">Connected incident</span>
+        <div className="flex flex-col gap-2 rounded-xl border border-amber/40 bg-amber/5 p-4 sm:flex-row sm:items-center">
+          <span className="label shrink-0 text-amber">Connected incident</span>
           <span className="min-w-0 flex-1 text-[13.5px]"><span className="font-semibold">{incident.title}.</span> {incident.summary}</span>
           <span className="flex flex-wrap gap-1.5">
             {siblings.map((s) => (
@@ -36,7 +36,7 @@ export function FindingDetail({ job, report, finding: f }: { job: Job; report: R
             {runnerUp && <> · next most likely: {runnerUp.label} ({pct(runnerUp.probability)})</>}
           </span>
         </div>
-        <h2 className="display mt-3 text-[24px] font-semibold leading-snug">{f.title}</h2>
+        <h2 className="display mt-3 text-[22px] font-bold leading-snug text-white">{f.title}</h2>
         <p className="mt-1 text-[12.5px] text-muted">
           {clock(f.time_start)} to {clock(f.time_end)}
           <span className="mono ml-2">({offset(f.time_start, start)} to {offset(f.time_end, start)})</span>
@@ -56,7 +56,7 @@ export function FindingDetail({ job, report, finding: f }: { job: Job; report: R
       </header>
 
       <Section title="Why NetTriage thinks this" icon={<Info size={15} className="text-accent" />}
-        right={<span className="text-[12px] text-muted">Every explanation it considered, and the evidence for and against</span>}>
+        right={<span className="text-[12px] text-muted">Every explanation, for and against</span>}>
         <ul className="space-y-2">
           {f.hypotheses.map((h, i) => <HypothesisRow key={h.key} h={h} winner={i === 0} />)}
         </ul>

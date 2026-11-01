@@ -3,7 +3,8 @@ import { api, ApiError } from "../lib/api";
 import { bytes, num } from "../lib/format";
 import { href } from "../lib/router";
 import type { Job } from "../lib/types";
-import { ArrowLeft, Check, ShieldAlert } from "../components/icons";
+import { ArrowLeft, ShieldAlert } from "../components/icons";
+import { RadarDish } from "../components/Console";
 import { TopBar } from "../components/TopBar";
 import { ReportView } from "./Report";
 
@@ -95,7 +96,7 @@ function Problem({ title, message, detail, security }: { title: string; message:
             <ShieldAlert size={20} />
           </span>
           <div>
-            <h1 className="text-[18px] font-semibold">{title}</h1>
+            <h1 className="font-mono text-[17px] font-bold text-white">{title}</h1>
             <p className="mt-2 text-[15px]">{message}</p>
             {detail && <p className="mt-3 text-muted">{detail}</p>}
             <a href={href("/")} className="btn mt-5"><ArrowLeft size={14} /> Analyse another file</a>
@@ -124,22 +125,22 @@ function Progress({ job }: { job: Job }) {
   ];
   return (
     <Shell>
-      <div className="card p-6">
-        <p className="label">Analysing</p>
-        <h1 className="mt-1 truncate text-[18px] font-semibold">{job.file_name}</h1>
-        <p className="text-muted">{bytes(job.size)}</p>
+      <RadarDish className="mx-auto -mb-6 w-44" active />
+      <div className="card p-6 font-mono">
+        <p className="label text-neon">Analysing</p>
+        <h1 className="mt-1 truncate text-[16px] font-bold text-white">{job.file_name}</h1>
+        <p className="text-[12px] text-muted">{bytes(job.size)}</p>
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-line">
-          <div className="h-full rounded-full bg-gold transition-all duration-300"
+          <div className="h-full rounded-full bg-neon shadow-glow transition-all duration-300"
             style={{ width: `${Math.round((explaining ? 1 : Math.max(0.04, fraction)) * 100)}%` }} />
         </div>
-        <ol className="mt-5 space-y-2.5">
+        <ol className="mt-5 space-y-2 text-[13px]">
           {steps.map((s) => (
-            <li key={s.label} className="flex items-center gap-3">
-              <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${s.done
-                ? "border-benign bg-benign/15 text-benign" : s.active ? "border-accent text-accent" : "border-line"}`}>
-                {s.done ? <Check size={12} /> : s.active ? <span className="h-2 w-2 animate-pulse rounded-full bg-accent" /> : null}
+            <li key={s.label} className="flex items-baseline gap-3">
+              <span className={`shrink-0 whitespace-pre font-bold ${s.done ? "text-neon" : s.active ? "animate-pulse text-amber" : "text-muted/50"}`}>
+                {s.done ? "[ OK ]" : s.active ? "[ >> ]" : "[    ]"}
               </span>
-              <span className={s.done || s.active ? "" : "text-muted"}>{s.label}</span>
+              <span className={s.done || s.active ? "text-ink" : "text-muted"}>{s.label}</span>
             </li>
           ))}
         </ol>
