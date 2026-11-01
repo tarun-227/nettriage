@@ -12,7 +12,7 @@ Built solo for the IIITDM Kancheepuram 24-hour Cybersecurity Hackathon, Network 
 
 **Live demo:** https://web-production-cca62.up.railway.app/ (hosted on Railway; use the bundled samples, never upload private captures to a public host)
 
-**Demo video:** _link added at submission_
+**Demo video:** [Watch on Google Drive](https://drive.google.com/file/d/1ATnjMAk3lbWhF6KMcGx04liT3VP8F68-/view?usp=sharing)
 
 **Try it in 10 seconds:** open the live demo, press **Try a sample**, or upload
 [`samples/scenarios/mitm_dns_combo.pcap`](samples/scenarios/mitm_dns_combo.pcap) (an ARP man-in-the-middle that also forges DNS answers).
