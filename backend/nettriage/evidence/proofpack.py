@@ -374,7 +374,7 @@ def verify_proof_pack(data: bytes, expected_root: str | None = None) -> Verifica
         try:
             digest = hashlib.sha256(zf.read(path)).hexdigest()
         except (zipfile.BadZipFile, OSError):
-            problems.append(f"Unreadable file: {path}")
+            problems.append(f"Damaged or changed: {path}")
             continue
         if digest != e.get("sha256"):
             problems.append(f"Changed since packing: {path}")

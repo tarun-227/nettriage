@@ -8,7 +8,9 @@ import { useTitle } from "../lib/live";
 import { addRecent, forgetRecent } from "../lib/recent";
 import { href, navigate } from "../lib/router";
 import type { Finding, Job, Report, Verdict } from "../lib/types";
+import { BlastRadius } from "../components/BlastRadius";
 import { RadarDish } from "../components/Console";
+import { ProofPackDialog } from "../components/ProofPack";
 import { Bars, CheckCircle, ChevronDown, Download, FileIcon, Fingerprint, Info, List, Plus, Trash, Wrench } from "../components/icons";
 import { CopyButton, EntityChip, SeverityBadge, VerdictChip } from "../components/ui";
 import { FindingDetail } from "./FindingDetail";
@@ -46,6 +48,7 @@ export function ReportView({ job, report, rest }: { job: Job; report: Report; re
 
 function ReportHeader({ job, report }: { job: Job; report: Report }) {
   const [menu, setMenu] = useState(false);
+  const [pack, setPack] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menu) return;
@@ -83,6 +86,13 @@ function ReportHeader({ job, report }: { job: Job; report: Report }) {
           {menu && (
             <div role="menu" onClick={() => setMenu(false)}
               className="nt-menu absolute right-0 top-[calc(100%+8px)] z-40 w-[300px] rounded-xl border border-line bg-surface p-1.5 shadow-lift">
+              <button type="button" role="menuitem" onClick={() => setPack(true)} className="nt-row flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left">
+                <span className="flex text-neon"><Fingerprint size={15} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold">Proof Pack</span>
+                  <span className="text-[11.5px] text-muted">Safe to share: addresses hidden, tamper-evident</span>
+                </span>
+              </button>
               <MenuLink href={api.reportUrl(job.id)} icon={<FileIcon size={15} />} tone="text-neon" title="Full report" sub="JSON, every finding and its evidence" />
               {evidence.map((f) => (
                 <MenuLink key={f.id} href={api.evidenceUrl(job.id, f.id)} icon={<Download size={15} />}
@@ -100,6 +110,7 @@ function ReportHeader({ job, report }: { job: Job; report: Report }) {
           <Plus size={15} /> New<span className="hidden sm:inline"> analysis</span>
         </a>
       </div>
+      {pack && <ProofPackDialog jobId={job.id} onClose={() => setPack(false)} />}
     </header>
   );
 }
@@ -209,6 +220,8 @@ function Summary({ job, report }: { job: Job; report: Report }) {
         </section>
       )}
 
+      {(report.exposures ?? []).map((e) => <BlastRadius key={e.finding_id} exposure={e} start={report.capture.first_ts} />)}
+
       {ruled > 0 && <RuledOut report={report} />}
 
       <section id="details" className="scroll-mt-24">
@@ -296,6 +309,16 @@ function FindingCard({ job, f, open, onPackets }: { job: Job; f: Finding; open: 
       <p className="leading-relaxed text-muted">{f.summary_simple}</p>
       {f.entities.length > 0 && (
         <div className="flex flex-wrap gap-1.5">{f.entities.slice(0, 3).map((e) => <EntityChip key={`${e.kind}-${e.value}-${e.role}`} {...e} />)}</div>
+      )}
+      {(f.techniques ?? []).length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {f.techniques!.map((t) => (
+            <a key={t.id} href={t.url} target="_blank" rel="noreferrer noopener" title={t.name}
+              className="inline-flex items-center gap-1.5 rounded-md border border-attack/35 bg-attack/[0.06] px-2 py-0.5 font-mono text-[11px] text-attack transition-colors hover:border-attack/70">
+              ATT&amp;CK {t.id} <span className="hidden text-muted sm:inline">{t.name.replace("Adversary-in-the-Middle: ", "")}</span>
+            </a>
+          ))}
+        </div>
       )}
       <div className="flex flex-wrap gap-4 border-t border-line pt-3 font-mono text-[12.5px] font-semibold">
         <button type="button" onClick={() => setWhy(!why)} aria-expanded={why} className="nt-toggle inline-flex items-center gap-1.5 text-neon">

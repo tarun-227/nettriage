@@ -7,7 +7,8 @@ import { forgetRecent, listRecent, type Recent } from "../lib/recent";
 import { href, navigate } from "../lib/router";
 import type { Sample, ServerConfig } from "../lib/types";
 import { RadarDish } from "../components/Console";
-import { Activity, CheckCircle, Download, FileIcon, List, Lock, Plus, ShieldAlert, Trash, Upload, WifiOff, X } from "../components/icons";
+import { Activity, CheckCircle, Download, FileIcon, Fingerprint, List, Lock, Plus, ShieldAlert, Trash, Upload, WifiOff, X } from "../components/icons";
+import { VerifyPackDialog } from "../components/ProofPack";
 import { VerdictChip } from "../components/ui";
 
 export const CATEGORIES: Record<string, { label: string; chip: string }> = {
@@ -42,6 +43,7 @@ export function Dashboard({ openNew }: { openNew: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Problem | null>(null);
   const [over, setOver] = useState(false);
+  const [checking, setChecking] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   useTitle(modal ? "New analysis · NetTriage" : "Dashboard · NetTriage");
 
@@ -135,6 +137,9 @@ export function Dashboard({ openNew }: { openNew: boolean }) {
           <span className="flex items-center gap-2.5 rounded-lg bg-neon/10 px-2.5 py-2 text-neon shadow-[inset_2px_0_0_rgb(var(--neon))]"><Activity size={16} /> Dashboard</span>
           <NavButton target="recent" icon={<List size={16} />} label="Analyses" count={recent.length} />
           <NavButton target="library" icon={<FileIcon size={16} />} label="Library" count={samples.length} />
+          <button type="button" onClick={() => setChecking(true)} className="nt-nav flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-muted">
+            <Fingerprint size={16} /> Check a Proof Pack
+          </button>
           <a href={href("/")} className="nt-nav flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-muted"><Lock size={16} /> How it works</a>
         </nav>
         <div className="mt-auto flex flex-col gap-2 rounded-xl border border-line bg-bg p-3.5">
@@ -253,6 +258,7 @@ export function Dashboard({ openNew }: { openNew: boolean }) {
         </main>
       </div>
 
+      {checking && <VerifyPackDialog onClose={() => setChecking(false)} />}
       {modal && (
         <UploadModal tab={modal} setTab={setModal} onClose={closeModal} samples={samples} busy={busy} limit={limit}
           error={error} onUpload={upload} onSample={runSample} />

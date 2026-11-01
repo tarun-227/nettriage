@@ -1,4 +1,4 @@
-import type { Job, Sample, ServerConfig } from "./types";
+import type { Job, PackCheck, ProofPackInfo, Sample, ServerConfig } from "./types";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
@@ -44,4 +44,12 @@ export const api = {
   evidenceUrl: (id: string, findingId: string) => `/api/analyses/${id}/evidence/${findingId}`,
   reportUrl: (id: string) => `/api/analyses/${id}/report`,
   events: (id: string) => new EventSource(`/api/analyses/${id}/events`),
+  proofPack: (id: string) => call<ProofPackInfo>(`/api/analyses/${id}/proof-pack`, { method: "POST" }),
+  proofPackUrl: (id: string, token: string) => `/api/analyses/${id}/proof-pack/${token}`,
+  verifyPack: (file: File, root?: string) =>
+    call<PackCheck>("/api/proof-packs/verify", {
+      method: "POST",
+      body: file,
+      headers: { "content-type": "application/zip", ...(root ? { "x-expected-root": root } : {}) },
+    }),
 };

@@ -54,6 +54,63 @@ export interface Finding {
   key_packets: KeyPacket[];
   wireshark_filter: string;
   has_evidence_pcap: boolean;
+  techniques?: Technique[];
+}
+
+// MITRE ATT&CK technique an attack finding matches.
+export interface Technique {
+  id: string;
+  name: string;
+  url: string;
+}
+
+// One conversation that passed through an interceptor, and what crossing it exposed.
+export interface ExposedFlow {
+  victim: string;
+  peer: string;
+  name: string | null;
+  protocol: string;
+  port: number | null;
+  service: string;
+  encrypted: boolean | null;
+  exposed: string;
+  packets: number;
+  first_ts: number;
+  last_ts: number;
+  frames: number[];
+}
+
+// The blast radius of an interception.
+export interface Exposure {
+  finding_id: string;
+  attacker: string;
+  attacker_ips: string[];
+  victims: string[];
+  start: number;
+  end: number;
+  relayed_packets: number;
+  flows: ExposedFlow[];
+  hijacked_names: string[];
+  readable: number;
+  metadata_only: number;
+  summary: string;
+  fix_steps: string[];
+}
+
+export interface ProofPackInfo {
+  token: string;
+  root: string;
+  bytes: number;
+  files: { path: string; sha256: string; bytes: number }[];
+}
+
+export interface PackCheck {
+  ok: boolean;
+  root: string | null;
+  problems: string[];
+  files: number;
+  source_capture_sha256: string | null;
+  created: string | null;
 }
 
 export interface Report {
@@ -89,6 +146,7 @@ export interface Report {
   names: { name: string; count: number }[];
   device_names: { mac: string; hostname: string | null; vendor_class: string | null; ip: string | null }[];
   incidents?: Incident[];
+  exposures?: Exposure[];
   analysis_seconds: number;
 }
 
